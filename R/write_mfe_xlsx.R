@@ -11,10 +11,12 @@
 #' @export
 #'
 write_mfe_xlsx <- function(df, fn) {
+
   write.xlsx(
-    df = df,
-    fn = fn,
+    x = df,
+    file = fn,
     sheetname = "SoilCarbon",
     overwrite = TRUE
   )
+
 }
