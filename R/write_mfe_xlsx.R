@@ -8,7 +8,6 @@
 #' @author Pierre Roudier
 #'
 #' @importFrom openxlsx write.xlsx
-#' @export
 #'
 write_mfe_xlsx <- function(df, fn) {
 

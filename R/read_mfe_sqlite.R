@@ -7,7 +7,6 @@
 #' @author Pierre Roudier
 #'
 #' @importFrom RSQLite SQLite dbConnect dbReadTable dbDisconnect
-#' @export
 #'
 read_mfe_sqlite <- function(fn) {
 
