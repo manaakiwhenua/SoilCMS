@@ -11,4 +11,9 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports:
     RSQLite,
+    openxlsx,
     dplyr
+Collate: 
+    'write_mfe_xlsx.R'
+    'read_mfe_sqlite.R'
+    'orchestrate_export.R'
