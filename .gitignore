@@ -4,4 +4,4 @@
 .Ruserdata
 .Rbuildignore
 .R*
-example.db
+example.*
