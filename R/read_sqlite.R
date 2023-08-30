@@ -9,7 +9,7 @@
 #' @importFrom RSQLite SQLite dbConnect dbReadTable dbDisconnect
 #' @export
 #'
-read_sqlite <- function(fn) {
+read_mfe_sqlite <- function(fn) {
 
   # Initiate connection to SQLite
   con <- dbConnect(SQLite(), fn)
@@ -23,3 +23,4 @@ read_sqlite <- function(fn) {
   # Returns data.frame
   return(df)
 }
+
