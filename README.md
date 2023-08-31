@@ -28,7 +28,7 @@ fn |>
   read_mfe_sqlite() |> 
   process_mfe_data() |>
   write_mfe_xlsx(file = "./output.xlsx")
-  
+
 # This can be done directly as:
 export_mfe(sqlite_fn = fn, xlsx_fn = "./output.xlsx", process_data = TRUE)
 ```
