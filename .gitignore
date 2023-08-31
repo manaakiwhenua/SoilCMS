@@ -5,3 +5,5 @@
 .Rbuildignore
 .R*
 example.*
+*.xlsx
+*.db
