@@ -8,12 +8,18 @@
 #'
 #' @author Pierre Roudier
 #'
-#' @include read_mfe_sqlite.R write_mfe_xlsx.R
+#' @include read_mfe_sqlite.R process_mfe_data.R write_mfe_xlsx.R
 #' @export
 #'
 export_mfe <- function(sqlite_fn, xlsx_fn, process_data = FALSE) {
+
   # Read data
   df <- read_mfe_sqlite(fn = sqlite_fn)
+
+  # Process data
+  if (process_data) {
+    df <- process_mfe_data(df)
+  }
 
   # Export data to Excel
   write_mfe_xlsx(df = df, fn = xlsx_fn)

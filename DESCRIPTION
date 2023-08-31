@@ -15,5 +15,6 @@ Imports:
     dplyr
 Collate: 
     'write_mfe_xlsx.R'
+    'process_mfe_data.R'
     'read_mfe_sqlite.R'
     'orchestrate_export.R'
