@@ -18,3 +18,5 @@ Collate:
     'process_mfe_data.R'
     'read_mfe_sqlite.R'
     'orchestrate_export.R'
+Depends: 
+    R (>= 2.10)
