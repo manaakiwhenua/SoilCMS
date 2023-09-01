@@ -10,7 +10,12 @@ calculate_stocks <- function(df) {
   #
 
   # Typo in the VIEW, this is a temporary fix
-  df$amt_coarse_airdry_g = df$amt_coarse_airdry_gv
+  if (
+    (! "amt_coarse_airdry_g" %in% names(df)) &
+    "amt_coarse_airdry_gv" %in% names(df)
+  ) {
+    df$amt_coarse_airdry_g = df$amt_coarse_airdry_gv
+  }
 
   # Test to see if we have the bare necessities
   if (
