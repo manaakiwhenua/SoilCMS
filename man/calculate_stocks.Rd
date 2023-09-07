@@ -15,3 +15,6 @@ a data.frame with two additional columns for SOC and total N stocks
 \description{
 Calculate Carbon and Nitrogen Stocks
 }
+\author{
+Pierre Roudier
+}
