@@ -75,6 +75,12 @@
 #'
 #' @returns a data.frame with two additional columns for SOC and total N stocks
 #'
+#' @details
+#' This function calculates organic carbon and total nitrogen stocks from the NSDR export.
+#' Stocks are calculated as:
+#' \eqn{stock = carbon concentration \times horizon thickness \times bulk density of fine fraction}
+#'
+#'
 #' @author Pierre Roudier
 #'
 #' @importFrom dplyr mutate
