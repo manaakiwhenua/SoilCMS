@@ -1,4 +1,4 @@
-df_config <- openxlsx::read.xlsx("Soil carbon template.config.xlsx", sheet = "Columns")
+df_config <- openxlsx::read.xlsx("data-raw/Soil_carbon_template.config.xlsx", sheet = "Columns")
 names_config <- data.frame(
   short_heading = df_config[,1],
   long_heading = df_config[,2]
