@@ -1,28 +1,4 @@
 #' @noRd
-# .calculate_total_dry_weight <- function(
-#     amt_sample_airdry_g,
-#     amt_coarse_airdry_g,
-#     amt_airdry_water_content_p,
-#     amt_field_moist_water_content_p,
-#     amt_sample_wet_g
-#   ) {
-#
-#   if (!is.na(amt_coarse_airdry_g) & !is.na(amt_sample_airdry_g) & !is.na(amt_airdry_water_content_p)) {
-#     # Total oven dry sample weight
-#     total_dry_weight <- amt_coarse_airdry_g + (amt_sample_airdry_g - amt_coarse_airdry_g) / (1 + amt_airdry_water_content_p / 100)
-#   } else if (!is.na(amt_field_moist_water_content_p) & !is.na(amt_sample_wet_g)) {
-#     # ALTERNATIVE way to compute total dry_weight
-#     # Calculate moisture factor
-#     moisture_factor <- 1 + amt_field_moist_water_content_p / 100
-#     total_dry_weight <-  amt_sample_wet_g / moisture_factor
-#   } else {
-#     total_dry_weight <- NA
-#   }
-#
-#   return(total_dry_weight)
-# }
-
-#' @noRd
 .calculate_bd_fines <- function(
   # FIELDS USED IN BD FINES COMPUTATION
   #
@@ -159,6 +135,42 @@ calculate_thickness <- function(df) {
   return(df)
 }
 
+#' Check that all columns necessary are included in the SQLite
+#'
+#' @param df a data.frame read from the NSDR Viewer SQLite
+#' @returns Nothing, this function is called for its side effects
+#'
+#' @noRd
+#'
+check_columns <- function(df) {
+
+  cols_needed <- c(
+    "lab_samplingdepth_minval",
+    "lab_samplingdepth_maxval",
+    "amt_sampled_volume_cm3",
+    "amt_core_diameter_cm_val",
+    "n_composite",
+    "amt_sample_wet_g",
+    "amt_sample_airdry_g",
+    "amt_coarse_airdry_g",
+    "amt_airdry_water_content_p",
+    "amt_fine_od_g"
+  )
+
+  cols_df <- names(df)
+
+  missing_cols <- which(! cols_needed %in% cols_df)
+
+  if (length(missing_cols) > 0) {
+    stop(
+      "Missing column(s) in the input dataset:\n\n",
+      paste0(cols_needed[missing_cols], collapse = ",\n"),
+      call. = FALSE
+    )
+  }
+
+  return(NULL)
+}
 
 #' Process the Downloaded Data
 #'
@@ -166,6 +178,9 @@ calculate_thickness <- function(df) {
 #' @returns a data.frame with added/processed data
 #' @export
 process_mfe_data <- function(df) {
+
+  # Check all columns are here
+  check_columns(df)
 
   # Calculate sample thickness
   df <- calculate_thickness(df)
