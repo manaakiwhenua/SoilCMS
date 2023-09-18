@@ -128,8 +128,8 @@ calculate_volume <- function(df) {
 calculate_thickness <- function(df) {
 
   # Calculate thickness
-  df$amt_sample_depth_upper_cm <- df$lab_samplingdepth_minval
-  df$amt_sample_depth_lower_cm <- df$lab_samplingdepth_maxval
+  df$amt_sample_depth_upper_cm <- df$depth_minval # df$lab_samplingdepth_minval
+  df$amt_sample_depth_lower_cm <- df$depth_maxval # df$lab_samplingdepth_maxval
   df$thickness <- abs(df$amt_sample_depth_lower_cm - df$amt_sample_depth_upper_cm)
 
   return(df)
@@ -145,8 +145,10 @@ calculate_thickness <- function(df) {
 check_columns <- function(df) {
 
   cols_needed <- c(
-    "lab_samplingdepth_minval",
-    "lab_samplingdepth_maxval",
+    # "lab_samplingdepth_minval",
+    # "lab_samplingdepth_maxval",
+    "depth_minval",
+    "depth_maxval",
     "amt_sampled_volume_cm3",
     "amt_core_diameter_cm_val",
     "n_composite",
