@@ -3,6 +3,7 @@
 export(calculate_stocks)
 export(export_mfe)
 export(process_mfe_data)
+export(read_mfe_sqlite)
 importFrom(RSQLite,SQLite)
 importFrom(RSQLite,dbConnect)
 importFrom(RSQLite,dbDisconnect)
