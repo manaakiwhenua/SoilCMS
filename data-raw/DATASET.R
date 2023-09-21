@@ -26,6 +26,7 @@ names_config <- rbind(
 #   short_heading = df_config[,1],
 #   long_heading = df_config[,2]
 # )
+
 names_config$short_heading <- stringr::str_replace(names_config$short_heading, ">", "")
 names_config$short_heading <- stringr::str_replace(names_config$short_heading, "<", "")
 
