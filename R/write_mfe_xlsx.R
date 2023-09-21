@@ -8,7 +8,7 @@
     res <- unique(res)
 
   } else {
-    idx <- amatch(x, names_config$short_heading, maxDist = 3)
+    idx <- amatch(x, names_config$short_heading, maxDist = 10)
 
     if (!is.na(idx)) {
       res <- names_config$long_heading[idx]
