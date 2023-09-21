@@ -1,4 +1,5 @@
 #' Returns the longer header description if available
+#' @importFrom stringdist amatch
 #' @noRd
 .get_long_header <- function(x) {
   if (x %in% names_config$short_heading) {
@@ -9,7 +10,11 @@
   } else {
     # If the short header is not in the collection we return
     # an empty string
-    res <- ""
+
+    idx <- amatch(x, names_config$short_heading, maxDist = Inf)
+    res <- names_config$long_heading[idx]
+
+    # res <- ""
   }
 
   return(res)

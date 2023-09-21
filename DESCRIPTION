@@ -1,6 +1,6 @@
 Package: SoilCMS
 Title: Processing NSDR data for the Soil CMS
-Version: 0.3.7
+Version: 0.4.0
 Authors@R: 
     person("Pierre", "Roudier", , "roudier@landcareresearch.co.nz", role = c("aut", "cre"))
 Description: Extraction and processing of data downloaded as a SQLite database 
@@ -13,7 +13,8 @@ Imports:
     RSQLite,
     openxlsx,
     plyr,
-    dplyr
+    dplyr,
+    stringdist
 Collate: 
     'globals.R'
     'write_mfe_xlsx.R'
