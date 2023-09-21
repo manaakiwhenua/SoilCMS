@@ -76,6 +76,7 @@ calculate_stocks <- function(df) {
 #'
 #' @param df a data.frame read from the NSDR Viewer SQLite
 #' @returns a data.frame with added/processed data
+#' @importFrom plyr alply
 #'
 calculate_fine_bd <- function(df) {
   df$fine_bulk_density <- do.call(
@@ -112,7 +113,15 @@ calculate_volume <- function(df) {
   df <- mutate(
       df,
       amt_sampled_volume_cm3 = case_when(
-        is.na(amt_sampled_volume_cm3) ~ pi * (amt_core_diameter_cm_val/2)^2 * (thickness) * n_composite,
+        # Case if NA, and core method
+        (
+          is.na(amt_sampled_volume_cm3) & type_method != "3. Quantitative pit for stony soils"
+        ) ~ pi * (amt_core_diameter_cm_val/2)^2 * (thickness) * n_composite,
+        # Case if NA, and core method
+        (
+          is.na(amt_sampled_volume_cm3) & type_method == "3. Quantitative pit for stony soils"
+        ) ~ amt_sampled_volume_cm3,
+        # Case if value exported already
         TRUE ~ amt_sampled_volume_cm3
       )
     )
