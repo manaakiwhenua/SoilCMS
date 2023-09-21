@@ -25,7 +25,7 @@
 #' @author Pierre Roudier
 #'
 #' @importFrom openxlsx createWorkbook addWorksheet writeData saveWorkbook addStyle createStyle setColWidths
-#'
+#' @export
 write_mfe_xlsx <- function(df, fn) {
 
   # write.xlsx(
