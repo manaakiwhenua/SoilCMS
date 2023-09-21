@@ -8,13 +8,15 @@
     res <- unique(res)
 
   } else {
-    # If the short header is not in the collection we return
-    # an empty string
-
     idx <- amatch(x, names_config$short_heading, maxDist = 3)
-    res <- names_config$long_heading[idx]
 
-    # res <- ""
+    if (!is.na(idx)) {
+      res <- names_config$long_heading[idx]
+    } else{
+      # If the short header is not in the collection we return
+      # an empty string
+      res <- ""
+    }
   }
 
   return(res)
