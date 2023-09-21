@@ -15,7 +15,7 @@ df_config_landuse <- data.frame(
   long_heading = as.character(config_landuse[1,])
 )
 
-df_config <- rbind(
+names_config <- rbind(
   df_config_sampling_site,
   df_config_sample,
   df_config_landuse
