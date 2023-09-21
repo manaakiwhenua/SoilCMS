@@ -20,13 +20,21 @@ df_fixed <- data.frame(
     "visit_authority",
     "location_x",
     "location_y",
-    "type_method"
+    "type_method",
+    "thickness",
+    "fine_bulk_density",
+    "carbon_stocks",
+    "nitrogen stocks"
   ),
   long_heading = c(
     "Sampling organisation",
     "Site X Coord (NZTM, m)",
     "Site Y Coord (NZTM, m)",
-    "Sampling method"
+    "Sampling method",
+    "Sample thickness (cm)",
+    "Bulk density of <2mm per total sample volume (g/cm3)",
+    "Organic carbon (Mg/ha)",
+    "Total nitrogen (Mg/ha)"
   )
 )
 
