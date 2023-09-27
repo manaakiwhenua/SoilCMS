@@ -13,6 +13,8 @@
   amt_airdry_water_content_p,
   # amt_field_moist_water_content_p,
   amt_sample_wet_g,
+  amt_bulkdensity_total_gcm3,
+  amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3,
   amt_fine_od_g
   ) {
 
@@ -114,6 +116,8 @@ calculate_fine_bd <- function(df) {
           amt_coarse_airdry_g = x$amt_coarse_airdry_g,
           amt_airdry_water_content_p = x$amt_airdry_water_content_p,
           amt_sample_wet_g = x$amt_sample_wet_g,
+          amt_bulkdensity_total_gcm3 = x$amt_bulkdensity_total_gcm3,
+          amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3 = x$amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3,
           amt_fine_od_g = x$amt_fine_od_g
         )
 
