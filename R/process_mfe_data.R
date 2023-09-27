@@ -32,7 +32,7 @@
     # Calculate coarse fraction
     coarse_fraction <- amt_coarse_airdry_g / total_dry_weight
     fine_fraction <- 1 - coarse_fraction
-    fine_fraction <- amt_sample_airdry_g / (amt_sample_airdry_g + amt_coarse_airdry_g)
+    # fine_fraction <- amt_sample_airdry_g / (amt_sample_airdry_g + amt_coarse_airdry_g)
 
     fine_bulk_density <- fine_fraction * amt_bulkdensity_total_gcm3
   }
