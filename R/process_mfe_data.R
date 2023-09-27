@@ -16,33 +16,55 @@
   amt_fine_od_g
   ) {
 
-  if(!is.na(amt_fine_od_g)) {
-    # If we have the oven dry weight of fine fraction
-    fine_bulk_density <- amt_fine_od_g / amt_sampled_volume_cm3
-  } else {
-    # Otherwise we have to use one of 2 methods
-    # to compute the total dry weight
-    # total_dry_weight <- .calculate_total_dry_weight(
-    #   amt_sample_airdry_g,
-    #   amt_coarse_airdry_g,
-    #   amt_airdry_water_content_p,
-    #   amt_field_moist_water_content_p,
-    #   amt_sample_wet_g
-    # )
+  # First we check if the fine BD has been inputed
+  if(!is.na(amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3)) {
+    fine_bulk_density <- amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3
+  }
+  # Then, we check if the total BD AND fine fraction has been inputed
+  else if(!is.na(amt_bulkdensity_total_gcm3)) {
 
     total_dry_weight <- amt_coarse_airdry_g +
       (amt_sample_airdry_g - amt_coarse_airdry_g) /
       (1 + amt_airdry_water_content_p / 100)
 
-    # Calculate total BD
-    total_bulk_density <- total_dry_weight / amt_sampled_volume_cm3
-
     # Calculate coarse fraction
     coarse_fraction <- amt_coarse_airdry_g / total_dry_weight
     fine_fraction <- 1 - coarse_fraction
+    fine_fraction <- amt_sample_airdry_g / (amt_sample_airdry_g + amt_coarse_airdry_g)
 
-    # Calculate BD of fine fraction
-    fine_bulk_density <- total_bulk_density * fine_fraction
+    fine_bulk_density <- fine_fraction * amt_bulkdensity_total_gcm3
+  }
+  # Then if all has fail then we compute from scratch
+  else {
+    if(!is.na(amt_fine_od_g)) {
+      # If we have the oven dry weight of fine fraction
+      fine_bulk_density <- amt_fine_od_g / amt_sampled_volume_cm3
+    } else {
+
+      # Otherwise we have to use one of 2 methods
+      # to compute the total dry weight
+      # total_dry_weight <- .calculate_total_dry_weight(
+      #   amt_sample_airdry_g,
+      #   amt_coarse_airdry_g,
+      #   amt_airdry_water_content_p,
+      #   amt_field_moist_water_content_p,
+      #   amt_sample_wet_g
+      # )
+
+      total_dry_weight <- amt_coarse_airdry_g +
+        (amt_sample_airdry_g - amt_coarse_airdry_g) /
+        (1 + amt_airdry_water_content_p / 100)
+
+      # Calculate total BD
+      total_bulk_density <- total_dry_weight / amt_sampled_volume_cm3
+
+      # Calculate coarse fraction
+      coarse_fraction <- amt_coarse_airdry_g / total_dry_weight
+      fine_fraction <- 1 - coarse_fraction
+
+      # Calculate BD of fine fraction
+      fine_bulk_density <- total_bulk_density * fine_fraction
+    }
   }
 
   return(fine_bulk_density)
@@ -165,7 +187,11 @@ check_columns <- function(df) {
     "amt_sample_airdry_g",
     "amt_coarse_airdry_g",
     "amt_airdry_water_content_p",
-    "amt_fine_od_g"
+    "amt_fine_od_g",
+    "amt_bulkdensity_total_gcm3",
+    "amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3",
+    "amt_orgc_p",
+    "amt_tn_p"
   )
 
   cols_df <- names(df)
