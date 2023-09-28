@@ -27,7 +27,7 @@
 
     # If there is no total dry weight info we have to calculate it
     if (is.na(amt_total_oven_dry_sample_g)) {
-      total_dry_weight <- amt_coarse_airdry_g +
+      amt_total_oven_dry_sample_g <- amt_coarse_airdry_g +
         (amt_sample_airdry_g - amt_coarse_airdry_g) /
         (1 + amt_airdry_water_content_p / 100)
     }
@@ -48,17 +48,10 @@
 
       # Otherwise we have to use one of 2 methods
       # to compute the total dry weight
-      # total_dry_weight <- .calculate_total_dry_weight(
-      #   amt_sample_airdry_g,
-      #   amt_coarse_airdry_g,
-      #   amt_airdry_water_content_p,
-      #   amt_field_moist_water_content_p,
-      #   amt_sample_wet_g
-      # )
 
       # If there is no total dry weight info we have to calculate it
       if (is.na(amt_total_oven_dry_sample_g)) {
-        total_dry_weight <- amt_coarse_airdry_g +
+        amt_total_oven_dry_sample_g <- amt_coarse_airdry_g +
           (amt_sample_airdry_g - amt_coarse_airdry_g) /
           (1 + amt_airdry_water_content_p / 100)
       }
