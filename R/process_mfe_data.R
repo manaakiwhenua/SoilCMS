@@ -25,12 +25,15 @@
   # Then, we check if the total BD AND fine fraction has been inputed
   else if(!is.na(amt_bulkdensity_total_gcm3)) {
 
-    total_dry_weight <- amt_coarse_airdry_g +
-      (amt_sample_airdry_g - amt_coarse_airdry_g) /
-      (1 + amt_airdry_water_content_p / 100)
+    # If there is no total dry weight info we have to calculate it
+    if (is.na(amt_total_oven_dry_sample_g)) {
+      total_dry_weight <- amt_coarse_airdry_g +
+        (amt_sample_airdry_g - amt_coarse_airdry_g) /
+        (1 + amt_airdry_water_content_p / 100)
+    }
 
     # Calculate coarse fraction
-    coarse_fraction <- amt_coarse_airdry_g / total_dry_weight
+    coarse_fraction <- amt_coarse_airdry_g / amt_total_oven_dry_sample_g
     fine_fraction <- 1 - coarse_fraction
     # fine_fraction <- amt_sample_airdry_g / (amt_sample_airdry_g + amt_coarse_airdry_g)
 
@@ -53,15 +56,18 @@
       #   amt_sample_wet_g
       # )
 
-      total_dry_weight <- amt_coarse_airdry_g +
-        (amt_sample_airdry_g - amt_coarse_airdry_g) /
-        (1 + amt_airdry_water_content_p / 100)
+      # If there is no total dry weight info we have to calculate it
+      if (is.na(amt_total_oven_dry_sample_g)) {
+        total_dry_weight <- amt_coarse_airdry_g +
+          (amt_sample_airdry_g - amt_coarse_airdry_g) /
+          (1 + amt_airdry_water_content_p / 100)
+      }
 
       # Calculate total BD
-      total_bulk_density <- total_dry_weight / amt_sampled_volume_cm3
+      total_bulk_density <- amt_total_oven_dry_sample_g / amt_sampled_volume_cm3
 
       # Calculate coarse fraction
-      coarse_fraction <- amt_coarse_airdry_g / total_dry_weight
+      coarse_fraction <- amt_coarse_airdry_g / amt_total_oven_dry_sample_g
       fine_fraction <- 1 - coarse_fraction
 
       # Calculate BD of fine fraction
