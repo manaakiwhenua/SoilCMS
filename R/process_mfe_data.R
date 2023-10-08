@@ -1,4 +1,21 @@
 #' @noRd
+.calculate_coarse_fraction <- function(
+    amt_coarse_airdry_g,
+    amt_total_oven_dry_sample_g
+    ) {
+
+  # If the air dry weight of coarse fraction is recorded as zero
+  # we don't need to even check the total sample weight (which may be NA)
+  if (amt_coarse_airdry_g == 0) {
+    coarse_fraction <- 0
+  } else {
+    coarse_fraction <- amt_coarse_airdry_g / amt_total_oven_dry_sample_g
+  }
+
+  return(coarse_fraction)
+}
+
+#' @noRd
 .calculate_bd_fines <- function(
   # FIELDS USED IN BD FINES COMPUTATION
   #
@@ -34,11 +51,10 @@
     }
 
     # Calculate coarse fraction
-    coarse_fraction <- amt_coarse_airdry_g / amt_total_oven_dry_sample_g
-    fine_fraction <- 1 - coarse_fraction
-    # fine_fraction <- amt_sample_airdry_g / (amt_sample_airdry_g + amt_coarse_airdry_g)
+    coarse_fraction <- .calculate_coarse_fraction(amt_coarse_airdry_g, amt_total_oven_dry_sample_g)
 
-    fine_bulk_density <- fine_fraction * amt_bulkdensity_total_gcm3
+    # Calculate BD of fine fraction (fine_fraction = 1 - coarse_fraction)
+    fine_bulk_density <- amt_bulkdensity_total_gcm3 * (1 - coarse_fraction)
   }
   # Then if all has fail then we compute from scratch
   else {
@@ -61,11 +77,10 @@
       total_bulk_density <- amt_total_oven_dry_sample_g / amt_sampled_volume_cm3
 
       # Calculate coarse fraction
-      coarse_fraction <- amt_coarse_airdry_g / amt_total_oven_dry_sample_g
-      fine_fraction <- 1 - coarse_fraction
+      coarse_fraction <- .calculate_coarse_fraction(amt_coarse_airdry_g, amt_total_oven_dry_sample_g)
 
-      # Calculate BD of fine fraction
-      fine_bulk_density <- total_bulk_density * fine_fraction
+      # Calculate BD of fine fraction (fine_fraction = 1 - coarse_fraction)
+      fine_bulk_density <- total_bulk_density * (1 - coarse_fraction)
     }
   }
 
