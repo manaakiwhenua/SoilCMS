@@ -34,7 +34,8 @@
   amt_calc_coarse_fraction_pp,
   amt_bulkdensity_total_gcm3,
   amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3,
-  amt_fine_od_g
+  amt_fine_od_g,
+  amt_field_moist_water_content_p
   ) {
 
   # First we check if the fine BD has been inputed
@@ -70,9 +71,17 @@
 
       # If there is no total dry weight info we have to calculate it
       if (is.na(amt_total_oven_dry_sample_g)) {
-        amt_total_oven_dry_sample_g <- amt_coarse_airdry_g +
-          (amt_sample_airdry_g - amt_coarse_airdry_g) /
-          (1 + amt_airdry_water_content_p / 100)
+
+        # If we have total coarse and fractions dry weights
+        if (!is.na(amt_coarse_airdry_g) & !is.na(amt_sample_airdry_g)) {
+          amt_total_oven_dry_sample_g <- amt_coarse_airdry_g +
+            (amt_sample_airdry_g - amt_coarse_airdry_g) /
+            (1 + amt_airdry_water_content_p / 100)
+        } else {
+          # Otherwise we use the soil water content of field moist sample
+          amt_total_oven_dry_sample_g <- amt_sample_wet_g / (1 + amt_field_moist_water_content_p/100)
+        }
+
       }
 
       # Calculate total BD
@@ -138,7 +147,8 @@ calculate_fine_bd <- function(df) {
           amt_calc_coarse_fraction_pp = x$amt_calc_coarse_fraction_pp,
           amt_bulkdensity_total_gcm3 = x$amt_bulkdensity_total_gcm3,
           amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3 = x$amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3,
-          amt_fine_od_g = x$amt_fine_od_g
+          amt_fine_od_g = x$amt_fine_od_g,
+          amt_field_moist_water_content_p = x$amt_field_moist_water_content_p
         )
 
         return(res)
@@ -213,6 +223,7 @@ check_columns <- function(df) {
     "amt_airdry_water_content_p",
     "amt_calc_coarse_fraction_pp",
     "amt_fine_od_g",
+    "amt_field_moist_water_content_p",
     "amt_bulkdensity_total_gcm3",
     "amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3",
     "amt_orgc_p",
