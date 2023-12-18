@@ -4,10 +4,12 @@
 \alias{read_mfe_sqlite}
 \title{Read a SQLite DB into a data.frame}
 \usage{
-read_mfe_sqlite(fn)
+read_mfe_sqlite(fn, view = "MfE_Carbon_data")
 }
 \arguments{
 \item{fn}{Path to a SQLite file}
+
+\item{view}{Name of the SQLite View to load. Defaults to "MfE_Carbon_data".}
 }
 \value{
 a data.frame
