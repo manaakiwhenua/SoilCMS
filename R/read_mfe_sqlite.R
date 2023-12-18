@@ -15,7 +15,7 @@ read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data") {
   con <- dbConnect(SQLite(), fn)
 
   # Read data View
-  df <- dbReadTable(con, "MfE_Carbon_data")
+  df <- dbReadTable(con, view)
 
   # Close connection
   dbDisconnect(con)
