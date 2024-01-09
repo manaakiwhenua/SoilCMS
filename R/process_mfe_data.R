@@ -180,11 +180,12 @@ calculate_volume <- function(df) {
       amt_sampled_volume_cm3 = case_when(
         # Case if NA, and core method
         (
-          is.na(amt_sampled_volume_cm3) &
-            type_method != "3. Quantitative pit for stony soils" &
+          "type_method" %in% names(df) &
             "amt_core_diameter_cm_val" %in% names(df) &
             "thickness" %in% names(df) &
-            "n_composite" %in% names(df)
+            "n_composite" %in% names(df) &
+            is.na(amt_sampled_volume_cm3) &
+            type_method != "3. Quantitative pit for stony soils"
         ) ~ pi * (amt_core_diameter_cm_val/2)^2 * (thickness) * n_composite,
         # Case if value exported already
         TRUE ~ amt_sampled_volume_cm3
