@@ -24,6 +24,7 @@ if (!is.na(amt_coarse_airdry_g) & amt_coarse_airdry_g == 0) {
   # - amt_airdry_water_content_p
   # - amt_sampled_volume_cm3
   # - amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3
+
   amt_sampled_volume_cm3,
   amt_sample_airdry_g,
   amt_coarse_airdry_g,
@@ -64,6 +65,7 @@ if (!is.na(amt_coarse_airdry_g) & amt_coarse_airdry_g == 0) {
   }
   # Then if all has fail then we compute from scratch
   else {
+
     if(!is.na(amt_fine_od_g)) {
       # If we have the oven dry weight of fine fraction
       fine_bulk_density <- amt_fine_od_g / amt_sampled_volume_cm3
@@ -172,17 +174,18 @@ calculate_fine_bd <- function(df) {
 #' @importFrom dplyr mutate case_when
 calculate_volume <- function(df) {
   # PI()*(amt_core_diameter_cm/2)^2*(thickness)*n_composite
+
   df <- mutate(
       df,
       amt_sampled_volume_cm3 = case_when(
         # Case if NA, and core method
         (
-          is.na(amt_sampled_volume_cm3) & type_method != "3. Quantitative pit for stony soils"
+          is.na(amt_sampled_volume_cm3) &
+            type_method != "3. Quantitative pit for stony soils" &
+            "amt_core_diameter_cm_val" %in% names(df) &
+            "thickness" %in% names(df) &
+            "n_composite" %in% names(df)
         ) ~ pi * (amt_core_diameter_cm_val/2)^2 * (thickness) * n_composite,
-        # Case if NA, and core method
-        (
-          is.na(amt_sampled_volume_cm3) & type_method == "3. Quantitative pit for stony soils"
-        ) ~ amt_sampled_volume_cm3,
         # Case if value exported already
         TRUE ~ amt_sampled_volume_cm3
       )
@@ -221,8 +224,8 @@ check_columns <- function(df) {
     "depth_minval",
     "depth_maxval",
     "amt_sampled_volume_cm3",
-    "amt_core_diameter_cm_val",
-    "n_composite",
+    # "amt_core_diameter_cm_val",
+    # "n_composite",
     "amt_sample_wet_g",
     "amt_sample_airdry_g",
     "amt_coarse_airdry_g",

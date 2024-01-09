@@ -1,6 +1,6 @@
 Package: SoilCMS
 Title: Processing NSDR data for the Soil CMS
-Version: 0.4.16
+Version: 0.4.17
 Authors@R: 
     person("Pierre", "Roudier", , "roudier@landcareresearch.co.nz", role = c("aut", "cre"))
 Description: Extraction and processing of data downloaded as a SQLite database 
