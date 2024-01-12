@@ -4,13 +4,13 @@
     amt_total_oven_dry_sample_g
     ) {
 
-# If the air dry weight of coarse fraction is recorded as zero
-# we don't need to even check the total sample weight (which may be NA)
-if (!is.na(amt_coarse_airdry_g) & amt_coarse_airdry_g == 0) {
-  coarse_fraction <- 0
-} else {
-  coarse_fraction <- amt_coarse_airdry_g / amt_total_oven_dry_sample_g
-}
+  # If the air dry weight of coarse fraction is recorded as zero
+  # we don't need to even check the total sample weight (which may be NA)
+  if (!is.na(amt_coarse_airdry_g) & amt_coarse_airdry_g == 0) {
+    coarse_fraction <- 0
+  } else {
+    coarse_fraction <- amt_coarse_airdry_g / amt_total_oven_dry_sample_g
+  }
 
   return(coarse_fraction)
 }
@@ -55,7 +55,10 @@ if (!is.na(amt_coarse_airdry_g) & amt_coarse_airdry_g == 0) {
 
     # Calculate coarse fraction
     if (is.na(amt_calc_coarse_fraction_pp)) {
-      coarse_fraction <- .calculate_coarse_fraction(amt_coarse_airdry_g, amt_total_oven_dry_sample_g)
+      coarse_fraction <- .calculate_coarse_fraction(
+        amt_coarse_airdry_g,
+        amt_total_oven_dry_sample_g
+      )
     } else {
       coarse_fraction <- amt_calc_coarse_fraction_pp
     }
