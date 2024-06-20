@@ -127,9 +127,16 @@
 #' @export
 calculate_stocks <- function(df) {
 
-  # Finally, calculate stocks
-  df$carbon_stocks <- df$amt_orgc_p * df$thickness * df$fine_bulk_density
-  df$nitrogen_stocks <- df$amt_tn_p * df$thickness * df$fine_bulk_density
+  # If we have a column from the DB with the calculated stocks,
+  # we bypass the calculation
+  if ("amt_calc_orgc_mgha" %in% names(df)) {
+    df$carbon_stocks <- df$amt_calc_orgc_mgha
+    df$nitrogen_stocks <- df$amt_tn_p * df$thickness * df$fine_bulk_density
+  } else {
+    # Otherwise, we calculate stocks
+    df$carbon_stocks <- df$amt_orgc_p * df$thickness * df$fine_bulk_density
+    df$nitrogen_stocks <- df$amt_tn_p * df$thickness * df$fine_bulk_density
+  }
 
   return(df)
 }
