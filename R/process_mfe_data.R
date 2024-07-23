@@ -130,13 +130,24 @@ calculate_stocks <- function(df) {
   # If we have a column from the DB with the calculated stocks,
   # we bypass the calculation
   if ("amt_calc_orgc_mgha" %in% names(df)) {
-    df$carbon_stocks <- df$amt_calc_orgc_mgha
-    df$nitrogen_stocks <- df$amt_tn_p * df$thickness * df$fine_bulk_density
+    # We only use the non-NA values!
+    is_non_na <- !is.na(df$amt_calc_orgc_mgha)
+    idx_non_na <- which(is_non_na)
+    idx_na <- which(!is_non_na)
+
+    if (length(which(is_non_na)) > 0) {
+      df$carbon_stocks[idx_non_na] <- df$amt_calc_orgc_mgha[idx_non_na]
+    } else {
+      # If there are any NA values left, we try and calculate them
+      df$carbon_stocks[idx_na] <- df$amt_orgc_p[idx_na] * df$thickness[idx_na] * df$fine_bulk_density[idx_na]
+    }
   } else {
     # Otherwise, we calculate stocks
     df$carbon_stocks <- df$amt_orgc_p * df$thickness * df$fine_bulk_density
-    df$nitrogen_stocks <- df$amt_tn_p * df$thickness * df$fine_bulk_density
   }
+
+  # We still have to calculate Nitrogen stock
+  df$nitrogen_stocks <- df$amt_tn_p * df$thickness * df$fine_bulk_density
 
   return(df)
 }
