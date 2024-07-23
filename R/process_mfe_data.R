@@ -135,11 +135,23 @@ calculate_stocks <- function(df) {
     idx_non_na <- which(is_non_na)
     idx_na <- which(!is_non_na)
 
-    if (length(which(is_non_na)) > 0) {
+    # If there are at least some non-NA values
+    if (length(idx_non_na) > 0) {
+
+      # initiate result vector
+      df$carbon_stocks <- NA
+
+      # use all the non-NA values available
       df$carbon_stocks[idx_non_na] <- df$amt_calc_orgc_mgha[idx_non_na]
+
+      # If there are any NA values left, we try and calculate them to gap-fill
+      if (length(idx_na) > 0) {
+        df$carbon_stocks[idx_na] <- df$amt_orgc_p[idx_na] * df$thickness[idx_na] * df$fine_bulk_density[idx_na]
+      }
+
     } else {
-      # If there are any NA values left, we try and calculate them
-      df$carbon_stocks[idx_na] <- df$amt_orgc_p[idx_na] * df$thickness[idx_na] * df$fine_bulk_density[idx_na]
+      # Otherwise, we calculate stocks
+      df$carbon_stocks <- df$amt_orgc_p * df$thickness * df$fine_bulk_density
     }
   } else {
     # Otherwise, we calculate stocks
