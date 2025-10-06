@@ -444,6 +444,14 @@
 
   # }
 
+<<<<<<< HEAD
+=======
+    # Sanity check: there should be only one location per site
+    # if not, we take the average location
+
+
+
+>>>>>>> e4efe7a7be5193f5f2a18751ca08c6e9d786da7e
   # ADD SUBSITE_ID
   res <- res |>
     left_join(
