@@ -1,5 +1,53 @@
 #' @noRd
-amt_airdry_water_content_p <- amt_coarse_airdry_g <-
+authority <-
+  classifier_nzsc <-
+  classifier_nzsc_alt <-
+  dataset_id <-
+  depth_maxval <-
+  depth_minval <-
+  depth_uom <-
+  dm_monitoringdataset_id <-
+  dm_surveydataset_id <-
+  field_samplingdepth_maxval <-
+  field_samplingdepth_minval <-
+  field_samplingdepth_uom <-
+  identifier <-
+  identifier_alt <-
+  lab_samplingdepth_uom <-
+  lc_landuse_id <-
+  location_geometry_srid <-
+  location_geometry_x <-
+  location_geometry_y <-
+  location_srid <-
+  location_x <-
+  location_y <-
+  name <-
+  note <-
+  result_val <-
+  sa_laboratorysample_id <-
+  sa_monitoringsite_id <-
+  sa_sample_id <-
+  sa_site_id <-
+  sa_sitevisit_id <-
+  sample_identifier <-
+  sample_identifier_alt <-
+  sc_amt_core_diameter_cm_val <-
+  sc_n_composite <-
+  sc_txt_area_composite_samples_represent <-
+  site_id <-
+  site_identifier  <-
+  site_identifier_alt <-
+  slopeangle_val <-
+  slopeaspect_val <-
+  subsite_id <-
+  type <-
+  type_composite <-
+  type_method <-
+  unit_factor <-
+  visit_authority <-
+  visit_date <-
+  amt_airdry_water_content_p <-
+  amt_coarse_airdry_g <-
   amt_field_moist_water_content_p <-
   amt_fine_od_g <-
   amt_orgc_p <-
