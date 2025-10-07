@@ -567,32 +567,41 @@
       left_join(
         tbl(con, "sa_sitevisit") |>
           select(
-            sa_monitoringsite_id,
+            site_id = sa_monitoringsite_id,
             sa_sitevisit_id
           ),
         by = join_by(sa_sitevisit_id)
       ) |>
       # Run request
       collect() |>
+
       # Harmonise lab and field depths
       mutate(
-        # Site_id
-        site_id = sa_monitoringsite_id,
+
+        # Depth unit correction factor
+        unit_factor = case_when(
+          !is.na(lab_samplingdepth_minval) & lab_samplingdepth_uom %in% depth_units_factor ~
+            depth_units_factor[lab_samplingdepth_uom],
+          !is.na(field_samplingdepth_minval) & field_samplingdepth_uom %in% depth_units_factor ~
+            depth_units_factor[field_samplingdepth_uom],
+          TRUE ~ 1 # Defaulting to centimeters
+        ),
+
         # Min depth
         depth_minval = case_when(
           # If the lab depth is valid
-          !is.na(lab_samplingdepth_minval) ~ lab_samplingdepth_minval * depth_units_factor[lab_samplingdepth_uom],
+          !is.na(lab_samplingdepth_minval) ~ lab_samplingdepth_minval * unit_factor,
           # If the lab depth is invalid but the field depth is valid
-          is.na(lab_samplingdepth_minval) & is.na(field_samplingdepth_minval) ~ field_samplingdepth_minval * depth_units_factor[field_samplingdepth_uom],
+          is.na(lab_samplingdepth_minval) & !is.na(field_samplingdepth_minval) ~ field_samplingdepth_minval * unit_factor,
           # if there are no valid depths
           TRUE ~ NA
         ),
         # Max depth
         depth_maxval = case_when(
           # If the lab depth is valid
-          !is.na(lab_samplingdepth_maxval) ~ lab_samplingdepth_maxval * depth_units_factor[lab_samplingdepth_uom],
+          !is.na(lab_samplingdepth_maxval) ~ lab_samplingdepth_maxval * unit_factor,
           # If the lab depth is invalid but the field depth is valid
-          is.na(lab_samplingdepth_maxval) & is.na(field_samplingdepth_maxval) ~ field_samplingdepth_maxval * depth_units_factor[field_samplingdepth_uom],
+          is.na(lab_samplingdepth_maxval) & !is.na(field_samplingdepth_maxval) ~ field_samplingdepth_maxval * unit_factor,
           # if there are no valid depths
           TRUE ~ NA
         ),
@@ -605,12 +614,11 @@
       # Remove field and lab depth fields
       select(
         -starts_with("field_samplingdepth"),
-        -starts_with("lab_samplingdepth"),
-        -sa_monitoringsite_id
+        -starts_with("lab_samplingdepth")
       ) |>
       # Remove records that are all NA
       drop_na(
-        starts_with("depth_")
+        depth_minval, depth_maxval
       )
 
   } else {
@@ -634,26 +642,39 @@
       ) |>
       # Run request
       collect() |>
+
       # Harmonise lab and field depths
       mutate(
+
+        # Depth unit correction factor
+        unit_factor = case_when(
+          !is.na(lab_samplingdepth_minval) & lab_samplingdepth_uom %in% depth_units_factor ~
+            depth_units_factor[lab_samplingdepth_uom],
+          !is.na(field_samplingdepth_minval) & field_samplingdepth_uom %in% depth_units_factor ~
+            depth_units_factor[field_samplingdepth_uom],
+          TRUE ~ 1 # Defaulting to centimeters
+        ),
+
         # Min depth
         depth_minval = case_when(
           # If the lab depth is valid
-          !is.na(lab_samplingdepth_minval) ~ lab_samplingdepth_minval * depth_units_factor[lab_samplingdepth_uom],
+          !is.na(lab_samplingdepth_minval) ~ lab_samplingdepth_minval * unit_factor,
           # If the lab depth is invalid but the field depth is valid
-          is.na(lab_samplingdepth_minval) & is.na(field_samplingdepth_minval) ~ field_samplingdepth_minval * depth_units_factor[field_samplingdepth_uom],
+          is.na(lab_samplingdepth_minval) & !is.na(field_samplingdepth_minval) ~ field_samplingdepth_minval * unit_factor,
           # if there are no valid depths
           TRUE ~ NA
         ),
+
         # Max depth
         depth_maxval = case_when(
           # If the lab depth is valid
-          !is.na(lab_samplingdepth_maxval) ~ lab_samplingdepth_maxval * depth_units_factor[lab_samplingdepth_uom],
+          !is.na(lab_samplingdepth_maxval) ~ lab_samplingdepth_maxval * unit_factor,
           # If the lab depth is invalid but the field depth is valid
-          is.na(lab_samplingdepth_maxval) & is.na(field_samplingdepth_maxval) ~ field_samplingdepth_maxval * depth_units_factor[field_samplingdepth_uom],
+          is.na(lab_samplingdepth_maxval) & !is.na(field_samplingdepth_maxval) ~ field_samplingdepth_maxval * unit_factor,
           # if there are no valid depths
           TRUE ~ NA
         ),
+
         # Add UOM field (cm)
         depth_uom = case_when(
           !is.na(depth_minval) | !is.na(depth_maxval) ~ "cm",
@@ -667,7 +688,7 @@
       ) |>
       # Remove records that are all NA
       drop_na(
-        starts_with("depth_")
+        depth_minval, depth_maxval
       )
   }
 
@@ -773,10 +794,12 @@
       tbl_ob_obs_chem,
       by = join_by(sa_laboratorysample_id == sa_laboratorysample_id)
     ) |>
+
     # Remove empty records
-    drop_na(
-      starts_with("amt_")
-    ) |>
+    # drop_na(
+    #   starts_with("amt_")
+    # ) |>
+
     # Aggregate at the site/subsite level
     # - remove sample IDs
     select(-contains("sample")) |>
@@ -813,10 +836,12 @@
       tbl_ob_obs_phys,
       by = join_by(sa_laboratorysample_id == sa_laboratorysample_id)
     ) |>
+
     # Remove empty records
-    drop_na(
-      starts_with("amt_")
-    ) |>
+    # drop_na(
+    #   starts_with("amt_")
+    # ) |>
+
     # Aggregate at the site/subsite level
     # - remove sample IDs
     select(-contains("sample")) |>
@@ -1040,7 +1065,7 @@ read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = TRUE) {
 # fn1 = "/mnt/c/Users/RoudierP/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nscm_20250820.db"
 # fn2 = "/mnt/c/Users/RoudierP/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_sustain_20250825.db"
 
-fn1 = "/Users/pierreroudier/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nscm_20250820.db"
-fn2 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_sustain_20250825.db"
-con1  = dbConnect(RSQLite::SQLite(), fn1)
-con2  = dbConnect(RSQLite::SQLite(), fn2)
+# fn1 = "/Users/pierreroudier/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nscm_20250820.db"
+# fn2 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_sustain_20250825.db"
+# con1  = dbConnect(RSQLite::SQLite(), fn1)
+# con2  = dbConnect(RSQLite::SQLite(), fn2)
