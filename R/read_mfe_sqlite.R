@@ -1,3 +1,41 @@
+#' @noRd
+.unique <- function(x) {
+  idx_exclude <- which(is.na(x) | x == "")
+
+  if (length(idx_exclude) > 0) x <- x[-1*idx_exclude]
+
+  res <- unique(x)
+
+  if (length(res) == 0) res <- NA
+
+  # If there is still more than one element with collapse it with a comma
+  if (length(res) > 1) {
+    res <- paste0(res, collapse = ", ")
+  }
+
+  return(res)
+}
+
+# Custom weighted mean function that weights mean based
+# on the cross tabulation of values to average
+#' @noRd
+.weighted_mean_count <- function(x) {
+  # Remove any NAs
+  x <- as.numeric(na.omit(x))
+  tb <- table(x)
+  lv <- as.numeric(names(tb))
+
+  weighted.mean(x = lv, w = tb)
+}
+
+#' @noRd
+.mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+
+
 #' @title Check if data model is a monitoring site or not
 #' @importFrom RSQLite dbReadTable
 #' @importFrom dplyr pull
@@ -57,7 +95,7 @@
 
 #' @title Get subsite site data from sample table
 #' @importFrom dbplyr tbl_lazy
-#' @importFrom dplyr select left_join join_by collect
+#' @importFrom dplyr select left_join join_by collect full_join distinct
 #' @keywords internal
 #' @noRd
 #'
@@ -270,7 +308,7 @@
 
 #' @title Get landuse notes data
 #' @importFrom dbplyr tbl_lazy
-#' @importFrom dplyr select left_join
+#' @importFrom dplyr select left_join summarise group_by
 #' @keywords internal
 #' @noRd
 .getLanduseNotesTbl <- function(con) {
@@ -284,7 +322,7 @@
 
 #' @title Get landuse data
 #' @importFrom dbplyr tbl_lazy
-#' @importFrom dplyr select left_join
+#' @importFrom dplyr select left_join everything across
 #' @keywords internal
 #' @noRd
 .getLanduseTbl <- function(con) {
@@ -388,7 +426,7 @@
 
 #' @title Get site data
 #' @importFrom dbplyr tbl_lazy
-#' @importFrom dplyr select starts_with any_of contains distinct collect tbl relocate
+#' @importFrom dplyr select starts_with any_of contains distinct collect tbl relocate bind_cols bind_rows inner_join left_join
 #' @keywords internal
 #' @noRd
 #'
@@ -454,24 +492,6 @@
       ) |>
       # Remove duplicate rows
       distinct()
-
-  # Average any site that has more than one set of coordinates
-  .unique <- function(x) {
-    idx_exclude <- which(is.na(x) | x == "")
-
-    if (length(idx_exclude) > 0) x <- x[-1*idx_exclude]
-
-    res <- unique(x)
-
-    if (length(res) == 0) res <- NA
-
-    # If there is still more than one element with collapse it with a comma
-    if (length(res) > 1) {
-      res <- paste0(res, collapse = ", ")
-    }
-
-    return(res)
-  }
 
   # This averages site locations where more than one location is given
   # (typically, where 2 pits have been dug)
@@ -555,8 +575,12 @@
         sa_laboratorysample_id,
         sample_identifier = identifier,
         sample_identifier_alt = identifier_alt,
-        type,
-        any_of(c("type_composite", "type_method", "amt_core_diameter_cm_val", "n_composite", "area_composite_samples_represent")),
+        # type,
+        # any_of(c("type_composite", "type_method", "amt_core_diameter_cm_val", "n_composite", "area_composite_samples_represent")),
+        type, type_composite, type_method,
+        amt_core_diameter_cm_val = sc_amt_core_diameter_cm_val,
+        n_composite = sc_n_composite,
+        area_composite_samples_represent = sc_txt_area_composite_samples_represent,
         field_samplingdepth_minval,
         field_samplingdepth_maxval,
         field_samplingdepth_uom,
@@ -782,7 +806,7 @@
 }
 
 #' @title Assemble soil chemistry data
-#' @importFrom dplyr left_join join_by starts_with contains any_of group_by summarise across select mutate
+#' @importFrom dplyr left_join join_by starts_with contains any_of group_by summarise across select mutate where
 #' @importFrom tidyr pivot_wider
 #' @keywords internal
 #' @noRd
@@ -824,7 +848,7 @@
 }
 
 #' @title Assemble soil physics data
-#' @importFrom dplyr left_join join_by starts_with contains any_of group_by summarise across select mutate
+#' @importFrom dplyr left_join join_by starts_with contains any_of group_by summarise across select mutate where
 #' @importFrom tidyr pivot_wider
 #' @keywords internal
 #' @noRd
@@ -844,7 +868,14 @@
 
     # Aggregate at the site/subsite level
     # - remove sample IDs
-    select(-contains("sample")) |>
+    select(
+      # -contains("sample")
+      -sa_sitevisit_id,
+      -sa_sample_id, -sa_laboratorysample_id,
+      -sample_identifier, -sample_identifier_alt,
+      -unit_factor, -depth_uom
+    ) |>
+
     # - group_by site, subiste, depths
     group_by(
       across(
@@ -854,11 +885,14 @@
       )
     ) |>
     summarise(
+      # across(
+      #   starts_with("amt_"),
+      #   \(x) mean(x, na.rm = TRUE)),
+
       # Quantitative variables
-      across(
-        starts_with("amt_"),
-        \(x) mean(x, na.rm = TRUE)
-      ),
+      across(where(is.numeric), ~ mean(.x, na.rm = TRUE)),
+      across(where(is.character), ~ .unique(.x)),
+
       .groups = "drop"
     )
 
@@ -866,9 +900,10 @@
 }
 
 #' @title Aggregate soil physics data on the soil chem depth intervals
-#' @importFrom dplyr filter summarise across
+#' @importFrom dplyr filter summarise across where bind_rows
 #' @importFrom tidyr pivot_wider
 #' @importFrom pbapply pblapply
+#' @importFrom stats as.formula na.omit weighted.mean
 #' @importFrom aqp depths `depths<-` dice
 #' @keywords internal
 #' @noRd
@@ -879,17 +914,6 @@
   #   - we pull the phys depths
   #   - we match phys depths to chem depths
 
-  # Custom weighted mean function that weights mean based
-  # on the cross tabulation of values to average
-  .weighted_mean_count <- function(x) {
-    # Remove any NAs
-    x <- as.numeric(na.omit(x))
-    tb <- table(x)
-    lv <- as.numeric(names(tb))
-
-    weighted.mean(x = lv, w = tb)
-  }
-
   ####################################
   ####
   #### NEED TO IMPLEMENT SUBSITES!!!
@@ -897,8 +921,8 @@
   ####################################
 
   # Pull all the unique site IDs of the dataset
-  sids_df <- tbl_site %>%
-    select(site_id, subsite_id) %>%
+  sids_df <- tbl_site |>
+    select(site_id, subsite_id) |>
     distinct()
 
   l_res <- pbapply::pblapply(
@@ -937,12 +961,24 @@
             max_depth <- dc$depth_maxval
 
             rres <- phys_dc |>
-              filter(depth_minval >= min_depth & depth_maxval <= max_depth) |>
+              filter(
+                depth_minval >= min_depth & depth_maxval <= max_depth
+              ) |>
+              select(
+                -site_id, -subsite_id,
+                -depth_minval, -depth_maxval
+              ) |>
               summarise(
-                across(
-                  starts_with("amt_"),
-                  .weighted_mean_count
-                ),
+                # across(
+                #   starts_with("amt_"),
+                #     .weighted_mean_count
+                # ),
+
+                # Quantitative variables
+                across(where(is.numeric), ~ .weighted_mean_count(.x)),
+                # Character variables
+                across(where(is.character), ~ .mode(.x)),
+
                 .groups = "drop"
               )
 
@@ -971,6 +1007,7 @@
 #' @author Pierre Roudier
 #'
 #' @importFrom RSQLite SQLite dbConnect dbListTables  dbReadTable dbDisconnect
+#' @importFrom dplyr right_join join_by
 #' @export
 read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = TRUE) {
 
