@@ -7,3 +7,5 @@
 example.*
 *.xlsx
 *.db
+*.csv
+.gitignore
