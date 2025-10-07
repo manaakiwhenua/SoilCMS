@@ -245,13 +245,26 @@
 #' @importFrom dplyr select
 #' @keywords internal
 #' @noRd
-.getLandscapeTbl <- function(c) {
-  res <- tbl(con, "lc_landscape") |>
-    select(
-      site_id = sa_site_id,
-      slopeangle_val,
-      slopeaspect_val
-    )
+.getLandscapeTbl <- function(con) {
+
+  tbl_ls <- tbl(con, "lc_landscape")
+
+  if (.isMonitoring(con)) {
+    res <- tbl_ls |>
+      select(
+        site_id = sa_sitevisit_id,
+        slopeangle_val,
+        slopeaspect_val
+      )
+  } else {
+    res <- tbl_ls |>
+      select(
+        site_id = sa_site_id,
+        slopeangle_val,
+        slopeaspect_val
+      )
+  }
+
   return(res)
 }
 
@@ -411,7 +424,7 @@
   #
   # } else {
 
-    res <- .getSiteMetaTbl(con) |>
+    site_df <- .getSiteMetaTbl(con) |>
 
       # Add dataset information
       inner_join(
@@ -442,10 +455,66 @@
       # Remove duplicate rows
       distinct()
 
-  # }
+  # Average any site that has more than one set of coordinates
+  .unique <- function(x) {
+    idx_exclude <- which(is.na(x) | x == "")
+
+    if (length(idx_exclude) > 0) x <- x[-1*idx_exclude]
+
+    res <- unique(x)
+
+    if (length(res) == 0) res <- NA
+
+    # If there is still more than one element with collapse it with a comma
+    if (length(res) > 1) {
+      res <- paste0(res, collapse = ", ")
+    }
+
+    return(res)
+  }
+
+  # This averages site locations where more than one location is given
+  # (typically, where 2 pits have been dug)
+  site_df_avg <- lapply(
+    unique(site_df$site_id),
+    function(sid) {
+
+      # Select current site data
+      cur_df <- site_df |>
+        filter(
+          site_id == sid
+        )
+
+      # If there's more than one row of data, we need to average it before returning the site data
+      if (nrow(cur_df) > 1) {
+
+        nms <- names(cur_df)
+        l_cols <- lapply(
+          nms,
+          function(nm) {
+            if (nm %in% c("location_x", "location_y")) {
+              res <- mean(cur_df[[nm]], na.rm = TRUE)
+            } else {
+              res <- .unique(cur_df[[nm]])
+            }
+
+            return(res)
+          }
+        )
+        names(l_cols) <- nms
+        res <- bind_cols(l_cols)
+      } else {
+      # Otherwise we just return the site data as that one row
+        res <- cur_df
+      }
+
+    return(res)
+    }
+  ) |>
+    bind_rows()
 
   # ADD SUBSITE_ID
-  res <- res |>
+  res <- site_df_avg |>
     left_join(
       .getSubsites(con),
       by = join_by(site_id),
@@ -644,8 +713,7 @@
 }
 
 #' @title Get soil physics observations
-#' @importFrom dbplyr tbl
-#' @importFrom dplyr select mutate case_when filter collect
+#' @importFrom dplyr select mutate case_when filter collect tbl
 #' @importFrom tidyr pivot_wider
 #' @keywords internal
 #' @noRd
@@ -969,7 +1037,10 @@ read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = TRUE) {
   return(res)
 }
 
-fn1 = "/mnt/c/Users/RoudierP/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nscm_20250820.db"
-fn2 = "/mnt/c/Users/RoudierP/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_sustain_20250825.db"
+# fn1 = "/mnt/c/Users/RoudierP/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nscm_20250820.db"
+# fn2 = "/mnt/c/Users/RoudierP/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_sustain_20250825.db"
+
+fn1 = "/Users/pierreroudier/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nscm_20250820.db"
+fn2 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_sustain_20250825.db"
 con1  = dbConnect(RSQLite::SQLite(), fn1)
 con2  = dbConnect(RSQLite::SQLite(), fn2)
