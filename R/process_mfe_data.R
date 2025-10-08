@@ -240,10 +240,11 @@ calculate_thickness <- function(df) {
   return(df)
 }
 
+
 #' Check that all columns necessary are included in the SQLite
 #'
 #' @param df a data.frame read from the NSDR Viewer SQLite
-#' @returns Nothing, this function is called for its side effects
+#' @returns a data.frame with all the required columns
 #'
 #' @noRd
 #'
@@ -255,8 +256,8 @@ check_columns <- function(df) {
     "depth_minval",
     "depth_maxval",
     "amt_sampled_volume_cm3",
-    # "amt_core_diameter_cm_val",
-    # "n_composite",
+    "amt_core_diameter_cm_val",
+    "n_composite",
     "amt_sample_wet_g",
     "amt_sample_airdry_g",
     "amt_coarse_airdry_g",
@@ -274,15 +275,33 @@ check_columns <- function(df) {
 
   missing_cols <- which(! cols_needed %in% cols_df)
 
+  # If columns are missing, we are initiating them with NAs
   if (length(missing_cols) > 0) {
-    stop(
+
+    warning(
       "Missing column(s) in the input dataset:\n\n",
       paste0(cols_needed[missing_cols], collapse = ",\n"),
       call. = FALSE
     )
+
+    cols_to_add <- cols_needed[missing_cols]
+
+    l_cols_to_add <- lapply(
+      cols_to_add,
+      function(x) rep(NA, times = nrow(df))
+    )
+
+    names(l_cols_to_add) <- cols_to_add
+
+    # Add required columns to df
+    res <- df |>
+      bind_cols(l_cols_to_add)
+
+  } else {
+    res <- df
   }
 
-  return(NULL)
+  return(res)
 }
 
 #' Process the Downloaded Data
@@ -293,7 +312,7 @@ check_columns <- function(df) {
 process_mfe_data <- function(df) {
 
   # Check all columns are here
-  check_columns(df)
+  df <- check_columns(df)
 
   # Calculate sample thickness
   df <- calculate_thickness(df)
