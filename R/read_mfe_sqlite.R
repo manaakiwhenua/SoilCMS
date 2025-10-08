@@ -3,7 +3,6 @@
 #' @importFrom dplyr pull
 #' @keywords internal
 #' @noRd
-#'
 .isMonitoring <- function(con) {
 
   test <- "sa_sitevisit" %in% dbListTables(con)
@@ -24,7 +23,6 @@
 #' @importFrom RSQLite dbListTables
 #' @keywords internal
 #' @noRd
-#'
 .checkRequiredTables <- function(con) {
 
   # Required tables
@@ -60,7 +58,6 @@
 #' @importFrom dplyr select left_join join_by collect full_join distinct
 #' @keywords internal
 #' @noRd
-#'
 .getSubsites <- function(con) {
 
   if (.isMonitoring(con)) {
@@ -391,7 +388,6 @@
 #' @importFrom dplyr select starts_with any_of contains distinct collect tbl relocate bind_cols bind_rows inner_join left_join
 #' @keywords internal
 #' @noRd
-#'
 .getSiteTbl <- function(con) {
 
   # if (.isMonitoring(con)) {
@@ -516,7 +512,6 @@
 #' @importFrom tidyr drop_na
 #' @keywords internal
 #' @noRd
-#'
 .getSampleSupport <- function(con) {
 
   # Correcting factors for units different than cm
@@ -687,7 +682,6 @@
 #' @importFrom tidyr pivot_wider
 #' @keywords internal
 #' @noRd
-#'
 .getChemObs <- function(con) {
 
   # Table containing all observations data
@@ -724,7 +718,6 @@
 #' @importFrom tidyr pivot_wider
 #' @keywords internal
 #' @noRd
-#'
 .getPhysObs <- function(con) {
 
   # Table containing all observations data
@@ -772,7 +765,6 @@
 #' @importFrom tidyr pivot_wider
 #' @keywords internal
 #' @noRd
-#'
 .getChem <- function(tbl_sa_spl, tbl_ob_obs_chem) {
 
   res <- tbl_sa_spl |>
@@ -814,7 +806,6 @@
 #' @importFrom tidyr pivot_wider
 #' @keywords internal
 #' @noRd
-#'
 .getPhys  <- function(tbl_sa_spl, tbl_ob_obs_phys) {
 
   res <- tbl_sa_spl |>
@@ -869,7 +860,6 @@
 #' @importFrom aqp depths `depths<-` dice
 #' @keywords internal
 #' @noRd
-#'
 .aggregateSoilPhys <- function(tbl_site, tbl_chem, tbl_phys) {
   # For each site in the dataset
   #   - we pull the chem depths
