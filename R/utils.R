@@ -33,3 +33,13 @@
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
+
+#' @noRd
+.add_cols <- function(df, cols, value = NA) {
+
+  add <- cols[!cols %in% names(df)]
+
+  if(length(add) > 0) df[add] <- value
+
+  return(df)
+}
