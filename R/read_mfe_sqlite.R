@@ -390,36 +390,6 @@
 #' @noRd
 .getSiteTbl <- function(con) {
 
-  # if (.isMonitoring(con)) {
-  #
-  #   # res <- .getSiteMetaTbl(con) |>
-  #
-  #
-  #
-  #   # If it's a monitoring dataset, we need to get the site_id
-  #   # from the sa_visit_data table
-  #   # res <- tbl(con, "sa_sample") |>
-  #   #   select(
-  #   #     sa_sitevisit_id,
-  #   #     subsite_id = "sc_sub_site_identifier"
-  #   #   ) |>
-  #   #   left_join(
-  #   #     tbl(con, "sa_sitevisit") |>
-  #   #       select(
-  #   #         site_id = sa_monitoringsite_id,
-  #   #         sa_sitevisit_id
-  #   #       ),
-  #   #     by = join_by(sa_sitevisit_id)
-  #   #   ) |>
-  #   #   # Remove sitevist_id
-  #   #   select(
-  #   #     -sa_sitevisit_id
-  #   #   ) |>
-  #   #   # Run request
-  #   #   collect()
-  #
-  # } else {
-
     site_df <- .getSiteMetaTbl(con) |>
 
       # Add dataset information
@@ -532,8 +502,6 @@
         sa_laboratorysample_id,
         sample_identifier = identifier,
         sample_identifier_alt = identifier_alt,
-        # type,
-        # any_of(c("type_composite", "type_method", "amt_core_diameter_cm_val", "n_composite", "area_composite_samples_represent")),
         type, type_composite, type_method,
         amt_core_diameter_cm_val = sc_amt_core_diameter_cm_val,
         n_composite = sc_n_composite,
@@ -546,7 +514,7 @@
         lab_samplingdepth_uom
       ) |>
       left_join(
-        tbl(con, "sa_sitevisit") |>
+        tbl(con, "sa_sitevisit")|>
           select(
             site_id = sa_monitoringsite_id,
             sa_sitevisit_id
@@ -773,11 +741,6 @@
       by = join_by(sa_laboratorysample_id == sa_laboratorysample_id)
     ) |>
 
-    # Remove empty records
-    # drop_na(
-    #   starts_with("amt_")
-    # ) |>
-
     # Aggregate at the site/subsite level
     # - remove sample IDs
     select(-contains("sample")) |>
@@ -813,11 +776,6 @@
       tbl_ob_obs_phys,
       by = join_by(sa_laboratorysample_id == sa_laboratorysample_id)
     ) |>
-
-    # Remove empty records
-    # drop_na(
-    #   starts_with("amt_")
-    # ) |>
 
     # Aggregate at the site/subsite level
     # - remove sample IDs
@@ -1056,5 +1014,9 @@ read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = TRUE) {
 
 # fn1 = "/Users/pierreroudier/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nscm_20250820.db"
 # fn2 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_sustain_20250825.db"
+# fn3 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_MfE Soil CMS_20250814.db"
+fn4 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nsd_20240523.db"
+
 # con1  = dbConnect(RSQLite::SQLite(), fn1)
 # con2  = dbConnect(RSQLite::SQLite(), fn2)
+# con3 = dbConnect(RSQLite::SQLite(), fn3)
