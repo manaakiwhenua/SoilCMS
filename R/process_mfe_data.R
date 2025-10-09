@@ -286,16 +286,8 @@ check_columns <- function(df) {
 
     cols_to_add <- cols_needed[missing_cols]
 
-    l_cols_to_add <- lapply(
-      cols_to_add,
-      function(x) rep(NA, times = nrow(df))
-    )
-
-    names(l_cols_to_add) <- cols_to_add
-
     # Add required columns to df
-    res <- df |>
-      bind_cols(l_cols_to_add)
+    res <- .add_cols(df, cols_to_add)
 
   } else {
     res <- df
