@@ -67,7 +67,7 @@
     res <- tbl(con, "sa_sample") |>
       select(
         sa_sitevisit_id,
-        subsite_id = "sc_sub_site_identifier"
+        subsite_id = any_of("sc_sub_site_identifier")
       ) |>
       full_join(
         tbl(con, "sa_sitevisit") |>
@@ -90,7 +90,7 @@
       # Subset specific columns
       select(
         site_id = "sa_site_id",
-        subsite_id = "sc_sub_site_identifier"
+        subsite_id = any_of("sc_sub_site_identifier")
       ) |>
       # Run request
       collect()
@@ -98,6 +98,8 @@
 
   # Remove duplicates and reorder columns
   res <- res |>
+    # Add a subsite_id column if it was not present in the table
+    .add_cols("subsite_id") |>
     select(site_id, subsite_id) |>
     distinct()
 
@@ -497,7 +499,7 @@
     res <- tbl(con, "sa_sample") |>
       select(
         sa_sitevisit_id,
-        subsite_id = "sc_sub_site_identifier",
+        subsite_id = any_of("sc_sub_site_identifier"),
         sa_sample_id,
         sa_laboratorysample_id,
         sample_identifier = identifier,
@@ -575,7 +577,7 @@
       # Subset specific columns
       select(
         site_id = "sa_site_id",
-        subsite_id = "sc_sub_site_identifier",
+        subsite_id = any_of("sc_sub_site_identifier"),
         sa_sample_id,
         sa_laboratorysample_id,
         sample_identifier = identifier,
@@ -640,6 +642,19 @@
         depth_minval, depth_maxval
       )
   }
+
+
+  # Catch for cases where columns are not available -- we then suppose the data isn't there
+  # and initiate these as NA
+  res <- .add_cols(
+    res,
+    c(
+      "subsite_id",
+      "type_composite", "type_method",
+      "amt_core_diameter_cm_val", "n_composite", "area_composite_samples_represent",
+      "amt_field_moist_water_content_p"
+    )
+  )
 
   return(res)
 }
@@ -842,22 +857,56 @@
         sid <- sids_df$site_id[i]
         subid <- sids_df$subsite_id[i]
 
-        chem <- tbl_chem |> filter(site_id == sid & subsite_id == subid)
-        phys <- tbl_phys |> filter(site_id == sid & subsite_id == subid)
+        if (is.na(subid)) {
+          chem <- tbl_chem |> filter(site_id == sid & is.na(subsite_id))
+          phys <- tbl_phys |> filter(site_id == sid & is.na(subsite_id))
+        } else {
+          chem <- tbl_chem |> filter(site_id == sid & subsite_id == subid)
+          phys <- tbl_phys |> filter(site_id == sid & subsite_id == subid)
+        }
 
-        # That's if there no soil physics data at all
-        if (nrow(phys) == 0) {
+        # Removing zero-thicness horizons
+        phys <- phys |>
+          mutate(
+            thickness = depth_maxval - depth_minval
+          ) |>
+            filter(
+              thickness > 0
+            ) |>
+            select(
+              -thickness
+            )
+        chem <- chem |>
+          mutate(
+            thickness = depth_maxval - depth_minval
+          ) |>
+          filter(
+            thickness > 0
+          ) |>
+          select(
+            -thickness
+          )
+
+        # That's if there no soil physics OR no soil chem data at all
+        if (nrow(phys) == 0 | nrow(chem) == 0) {
           return(NULL)
         }
+
 
         # Convert soil physics data.frame to a SoilProfileCollection
         phys_sdf <- phys
         depths(phys_sdf) <- site_id ~ depth_minval + depth_maxval
 
         # Create diced soil profile
+        #
+
+        # A requirement of aqp::dice is that depths must be >= 0
+        min_depth <- max(0, min(chem$depth_minval))
+        max_depth <- max(0, max(chem$depth_maxval))
+
         phys_dc <- dice(
           phys_sdf,
-          fm = as.formula(paste0(min(chem$depth_minval), ":", max(chem$depth_maxval), " ~ .")),
+          fm = as.formula(paste0(min_depth, ":", max_depth, " ~ .")),
           SPC = FALSE
         ) |>
           select(names(phys))
