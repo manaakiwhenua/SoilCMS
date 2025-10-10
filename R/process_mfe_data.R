@@ -213,12 +213,16 @@ calculate_volume <- function(df) {
       amt_sampled_volume_cm3 = case_when(
         # Case if NA, and core method
         (
-          is.na(amt_sampled_volume_cm3) &
-            type_method != "3. Quantitative pit for stony soils"
-        ) ~ pi * (amt_core_diameter_cm_val/2)^2 * (thickness) * n_composite,
+          is.na(amt_sampled_volume_cm3) & type_method != "3. Quantitative pit for stony soils"
+        ) ~
+          pi * (amt_core_diameter_cm_val/2)^2 * (thickness) * n_composite,
+
+        # Case if value is not NA but some weird character string such as "unknown"
+        is.na(suppressWarnings(as.numeric(amt_sampled_volume_cm3))) ~ NA,
 
         # Case if value exported already
-        TRUE ~ amt_sampled_volume_cm3
+        TRUE ~ as.numeric(amt_sampled_volume_cm3)
+
       )
     )
 
@@ -268,7 +272,8 @@ check_columns <- function(df) {
     "amt_bulkdensity_total_gcm3",
     "amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3",
     "amt_orgc_p",
-    "amt_tn_p"
+    "amt_tn_p",
+    "amt_total_oven_dry_sample_g"
   )
 
   cols_df <- names(df)
