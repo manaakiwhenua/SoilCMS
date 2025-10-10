@@ -643,7 +643,6 @@
       )
   }
 
-
   # Catch for cases where columns are not available -- we then suppose the data isn't there
   # and initiate these as NA
   res <- .add_cols(
@@ -743,6 +742,31 @@
   return(res)
 }
 
+#' @title Get soil sample metadata
+#' @importFrom dplyr group_by summarise across any_of
+#' @keywords internal
+#' @noRd
+.getSplMetaTbl <- function(tbl_sa_spl) {
+
+  res <- tbl_sa_spl |>
+
+    select(
+      site_id, subsite_id,
+      depth_minval, depth_maxval,
+      type, type_method, type_composite,
+      n_composite, area_composite_samples_represent
+    ) |>
+    distinct() |>
+    mutate(
+      type = case_when(
+        type == "unknown" ~ NA,
+        TRUE ~ type
+      )
+    )
+
+  return(res)
+}
+
 #' @title Assemble soil chemistry data
 #' @importFrom dplyr left_join join_by starts_with contains any_of group_by summarise across select mutate where
 #' @importFrom tidyr pivot_wider
@@ -758,7 +782,12 @@
 
     # Aggregate at the site/subsite level
     # - remove sample IDs
-    select(-contains("sample")) |>
+    select(
+      -contains("sample"),
+      # These are now handled in the dedicated .getSplMetaTbl function
+      -type, -type_method, -type_composite,
+      - n_composite, -area_composite_samples_represent
+    ) |>
     # - group_by site, subiste, depths
     group_by(
       across(
@@ -768,11 +797,13 @@
       )
     ) |>
     summarise(
+
       # Quantitative variables
       across(
         starts_with("amt_"),
         \(x) mean(x, na.rm = TRUE)
       ),
+
       .groups = "drop"
     )
 
@@ -799,7 +830,10 @@
       -sa_sitevisit_id,
       -sa_sample_id, -sa_laboratorysample_id,
       -sample_identifier, -sample_identifier_alt,
-      -unit_factor, -depth_uom
+      -unit_factor, -depth_uom,
+      # These are now handled in the dedicated .getSplMetaTbl function
+      -type, -type_method, -type_composite,
+      - n_composite, -area_composite_samples_represent
     ) |>
 
     # - group_by site, subiste, depths
@@ -1035,6 +1069,9 @@ read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = TRUE) {
   # Disconnect from DB
   dbDisconnect(con)
 
+  # Get the sample metadata (type of composite etc)
+  tbl_md <- .getSplMetaTbl(tbl_sa_spl)
+
   # Join sample table with soil chemistry table
   tbl_chem <- .getChem(tbl_sa_spl, tbl_ob_obs_chem)
 
@@ -1053,6 +1090,10 @@ read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = TRUE) {
     right_join(
       agg_chem_phys,
       by = join_by(site_id, subsite_id)
+    ) |>
+    left_join(
+      tbl_md,
+      join_by(site_id, subsite_id, depth_minval, depth_maxval)
     )
 
   return(res)
