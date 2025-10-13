@@ -450,6 +450,13 @@
             } else if (nm == "visit_date") {
               # Take the latest sampling date
               dates <- ymd(cur_df$visit_date)
+
+              if (diff(dates) > 30) {
+                print(
+                  paste0(cur_df$site_id, " : ", diff(dates))
+                )
+              }
+
               res <- as.character(max(dates))
             } else {
               # Any other attrbutes just take the unique value or collapse with a comma
@@ -999,8 +1006,8 @@
 #' @title Read a SQLite DB into a data.frame
 #'
 #' @param fn Path to a SQLite file
-#' @param view Name of the SQLite View to load. Defaults to "MfE_Carbon_data".
-#' @param legacy Boolean, default to TRUE. This is the old system relying purely
+#' @param view Name of the SQLite View to load. Defaults to "MfE_Carbon_data". Part of the legacy system mentioned below.
+#' @param legacy Boolean, default to FALSE This is the old system relying purely
 #'  on Views. It is kept temporarily for testing purposes.
 #'
 #' @returns a data.frame
@@ -1010,7 +1017,7 @@
 #' @importFrom RSQLite SQLite dbConnect dbListTables dbReadTable dbDisconnect
 #' @importFrom dplyr right_join join_by
 #' @export
-read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = TRUE) {
+read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
 
   # Check file exists
   if (!file.exists(fn)) {
