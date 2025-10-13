@@ -388,6 +388,7 @@
 #' @title Get site data
 #' @importFrom dbplyr tbl_lazy
 #' @importFrom dplyr select starts_with any_of contains distinct collect tbl relocate bind_cols bind_rows inner_join left_join
+#' @importFrom lubridate ymd
 #' @keywords internal
 #' @noRd
 .getSiteTbl <- function(con) {
@@ -442,9 +443,16 @@
         l_cols <- lapply(
           nms,
           function(nm) {
+
+              # Average the location
             if (nm %in% c("location_x", "location_y")) {
               res <- mean(cur_df[[nm]], na.rm = TRUE)
+            } else if (nm == "visit_date") {
+              # Take the latest sampling date
+              dates <- ymd(cur_df$visit_date)
+              res <- as.character(max(dates))
             } else {
+              # Any other attrbutes just take the unique value or collapse with a comma
               res <- .unique(cur_df[[nm]])
             }
 
@@ -999,7 +1007,7 @@
 #'
 #' @author Pierre Roudier
 #'
-#' @importFrom RSQLite SQLite dbConnect dbListTables  dbReadTable dbDisconnect
+#' @importFrom RSQLite SQLite dbConnect dbListTables dbReadTable dbDisconnect
 #' @importFrom dplyr right_join join_by
 #' @export
 read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = TRUE) {

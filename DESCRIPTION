@@ -17,6 +17,7 @@ Imports:
     dplyr,
     tidyr,
     dbplyr,
+    lubridate,
     aqp,
     stringdist
 Collate: 
