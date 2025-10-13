@@ -11,18 +11,18 @@
 #' @include read_mfe_sqlite.R process_mfe_data.R write_mfe_xlsx.R
 #' @export
 #'
-export_mfe <- function(sqlite_fn, xlsx_fn, process_data = FALSE) {
+cms_export <- function(sqlite_fn, xlsx_fn, process_data = FALSE) {
 
   # Read data
-  df <- read_mfe_sqlite(fn = sqlite_fn)
+  df <- cms_read(fn = sqlite_fn)
 
   # Process data
   if (process_data) {
-    df <- process_mfe_data(df)
+    df <- cms_process(df)
   }
 
   # Export data to Excel
-  write_mfe_xlsx(df = df, fn = xlsx_fn)
+  cms_write(df = df, fn = xlsx_fn)
 
   # No need to retunr anything since the function is called for its side effect
   return(invisible())

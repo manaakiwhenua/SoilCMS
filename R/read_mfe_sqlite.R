@@ -1017,7 +1017,7 @@
 #' @importFrom RSQLite SQLite dbConnect dbListTables dbReadTable dbDisconnect
 #' @importFrom dplyr right_join join_by
 #' @export
-read_mfe_sqlite <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
+cms_read <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
 
   # Check file exists
   if (!file.exists(fn)) {

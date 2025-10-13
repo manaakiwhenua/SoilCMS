@@ -33,7 +33,7 @@
 #'
 #' @importFrom openxlsx createWorkbook addWorksheet writeData saveWorkbook addStyle createStyle setColWidths
 #' @export
-write_mfe_xlsx <- function(df, fn) {
+cms_write <- function(df, fn) {
 
   # write.xlsx(
   #   x = df,

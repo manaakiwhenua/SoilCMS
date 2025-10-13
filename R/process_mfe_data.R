@@ -306,7 +306,7 @@ check_columns <- function(df) {
 #' @param df a data.frame read from the NSDR Viewer SQLite
 #' @returns a data.frame with added/processed data
 #' @export
-process_mfe_data <- function(df) {
+cms_process <- function(df) {
 
   # Check all columns are here
   df <- check_columns(df)
