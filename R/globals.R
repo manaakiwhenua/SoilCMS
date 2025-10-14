@@ -1,5 +1,6 @@
 #' @noRd
 authority <-
+  area_composite_samples_represent <-
   classifier_nzsc <-
   classifier_nzsc_alt <-
   dataset_id <-
@@ -21,6 +22,7 @@ authority <-
   location_srid <-
   location_x <-
   location_y <-
+  n_composite <-
   name <-
   note <-
   result_val <-
