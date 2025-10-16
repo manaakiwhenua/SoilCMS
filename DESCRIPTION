@@ -13,6 +13,7 @@ Imports:
     RSQLite,
     openxlsx,
     pbapply,
+    stringr,
     plyr,
     dplyr,
     tidyr,
