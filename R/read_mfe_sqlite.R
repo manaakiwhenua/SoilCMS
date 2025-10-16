@@ -267,9 +267,40 @@
   return(res)
 }
 
+#' @title Get sample notes data
+#' @importFrom dbplyr tbl_lazy
+#' @importFrom dplyr select
+#' @keywords internal
+#' @noRd
+.getSplNotesTbl <- function(con) {
+
+  res <- tbl(con, "sa_sample_note")
+
+  if ("sa_laboratorysample_id" %in% colnames(res)) {
+    res <- res |>
+      select(
+        sa_laboratorysample_id,
+        sample_note = note
+      )
+  } else if ("sa_sample_id" %in% colnames(res)) {
+    res <- res |>
+      select(
+        sa_sample_id,
+        sample_note = note
+      )
+  } else {
+    stop(
+      cat("No sample ID columns found in table `sa_sample_note` for file:\n ", con@dbname),
+      call. = FALSE
+    )
+  }
+
+  return(res)
+}
+
 #' @title Get landuse notes data
 #' @importFrom dbplyr tbl_lazy
-#' @importFrom dplyr select left_join summarise group_by
+#' @importFrom dplyr select
 #' @keywords internal
 #' @noRd
 .getLanduseNotesTbl <- function(con) {
@@ -288,7 +319,8 @@
 #' @noRd
 .getLanduseTbl <- function(con) {
 
-  tbl_lu <- tbl(con, "lc_landuse")
+  tbl_lu <- tbl(con, "lc_landuse") |>
+    collect()
 
   if (.isMonitoring(con)) {
     res <- tbl_lu |>
@@ -358,9 +390,12 @@
   } else res$management_description <- NA
 
   # Add landuse_notes from lc_landuse_note
+  tbl_lu_notes <- .getLanduseNotesTbl(con) |>
+    collect()
+
   res <- res |>
     left_join(
-      .getLanduseNotesTbl(con),
+      tbl_lu_notes,
       by = join_by(lc_landuse_id)
     ) |>
     select(-lc_landuse_id)
@@ -658,6 +693,31 @@
       )
   }
 
+  # Add sample notes, if any
+  tbl_spl_notes <- .getSplNotesTbl(con) |>
+    collect()
+
+  if (nrow(tbl_spl_notes) > 0) {
+    if ("sa_laboratorysample_id" %in% names(tbl_spl_notes)) {
+      res <- res |>
+        left_join(
+          tbl_spl_notes,
+          by = join_by(sa_laboratorysample_id)
+        )
+    } if ("sa_sample_id" %in% names(tbl_spl_notes)) {
+      res <- res |>
+        left_join(
+          tbl_spl_notes,
+          by = join_by(sa_sample_id)
+        )
+    } else {
+      res <- res |>
+        left_join(
+          tbl_spl_notes
+        )
+    }
+  }
+
   # Catch for cases where columns are not available -- we then suppose the data isn't there
   # and initiate these as NA
   res <- .add_cols(
@@ -713,6 +773,7 @@
 #' @title Get soil physics observations
 #' @importFrom dplyr select mutate case_when filter collect tbl
 #' @importFrom tidyr pivot_wider
+#' @importFrom stringr str_detect fixed
 #' @keywords internal
 #' @noRd
 .getPhysObs <- function(con) {
