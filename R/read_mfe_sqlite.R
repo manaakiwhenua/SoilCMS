@@ -126,15 +126,15 @@
 #' @noRd
 .getSoilTbl <- function(con) {
 
-  tbl_visit <-  tbl(con, "sa_sitevisit")
-
-  tbl_soil <- tbl(con, "sd_soil") |>
-    left_join(
-      tbl_visit,
-      by = join_by(sa_sitevisit_id)
-    )
-
   if (.isMonitoring(con)) {
+
+    tbl_visit <-  tbl(con, "sa_sitevisit")
+
+    tbl_soil <- tbl(con, "sd_soil") |>
+      left_join(
+        tbl_visit,
+        by = join_by(sa_sitevisit_id)
+      )
 
     res <- tbl_soil |>
       select(
@@ -145,9 +145,11 @@
 
   } else {
 
+    tbl_soil <- tbl(con, "sd_soil")
+
     res <- tbl_soil |>
       select(
-        site_id = sa_gsite_id,
+        site_id = sa_site_id,
         nzsc = classifier_nzsc,
         nzsc_alt = classifier_nzsc_alt
       )
@@ -328,20 +330,32 @@
 #' @noRd
 .getLanduseTbl <- function(con) {
 
-  tbl_lu <- tbl(con, "lc_landuse") |>
-    collect()
-
   if (.isMonitoring(con)) {
+
+    tbl_visit <-  tbl(con, "sa_sitevisit")
+
+    tbl_lu <- tbl(con, "lc_landuse") |>
+      left_join(
+        tbl_visit,
+        by = join_by(sa_sitevisit_id)
+      ) |>
+      collect()
+
     res <- tbl_lu |>
       select(
-        site_id = sa_sitevisit_id,
-        lc_landuse_id = lc_landuse_id
+        site_id = sa_monitoringsite_id,
+        lc_landuse_id
       )
+
   } else {
+
+    tbl_lu <- tbl_lu <- tbl(con, "lc_landuse") |>
+      collect()
+
     res <- tbl_lu |>
       select(
         site_id = sa_site_id,
-        lc_landuse_id = lc_landuse_id
+        lc_landuse_id
       )
   }
 
