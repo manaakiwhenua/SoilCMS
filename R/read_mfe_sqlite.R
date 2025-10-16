@@ -126,19 +126,28 @@
 #' @noRd
 .getSoilTbl <- function(con) {
 
+  tbl_visit <-  tbl(con, "sa_sitevisit")
+
+  tbl_soil <- tbl(con, "sd_soil") |>
+    left_join(
+      tbl_visit,
+      by = join_by(sa_sitevisit_id)
+    )
+
   if (.isMonitoring(con)) {
-    res <- tbl(con, "sd_soil_unique") |>
+
+    res <- tbl_soil |>
       select(
-        site_id = sa_sitevisit_id,
-        # sd_soil_id,
+        site_id = sa_monitoringsite_id,
         nzsc = classifier_nzsc,
         nzsc_alt = classifier_nzsc_alt
       )
+
   } else {
-    res <- tbl(con, "sd_soil_unique") |>
+
+    res <- tbl_soil |>
       select(
-        site_id = sa_site_id,
-        # sd_soil_id,
+        site_id = sa_gsite_id,
         nzsc = classifier_nzsc,
         nzsc_alt = classifier_nzsc_alt
       )
