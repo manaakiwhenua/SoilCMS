@@ -121,7 +121,7 @@
 
 #' @title Get soil data
 #' @importFrom dbplyr tbl_lazy
-#' @importFrom dplyr select
+#' @importFrom dplyr select left_join join_by
 #' @keywords internal
 #' @noRd
 .getSoilTbl <- function(con) {
@@ -493,12 +493,14 @@
               res <- mean(cur_df[[nm]], na.rm = TRUE)
             } else if (nm == "visit_date") {
               # Take the latest sampling date
-              dates <- ymd(cur_df$visit_date)
+              dates <- unique(ymd(cur_df$visit_date))
 
-              if (diff(dates) > 30) {
-                print(
-                  paste0(cur_df$site_id, " : ", diff(dates))
-                )
+              if (length(dates) > 1) {
+                if (diff(dates) > 30) {
+                  print(
+                    paste0(cur_df$site_id, " : ", diff(dates))
+                  )
+                }
               }
 
               res <- as.character(max(dates))
