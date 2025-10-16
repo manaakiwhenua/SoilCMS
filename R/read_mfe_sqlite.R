@@ -704,7 +704,7 @@
           tbl_spl_notes,
           by = join_by(sa_laboratorysample_id)
         )
-    } if ("sa_sample_id" %in% names(tbl_spl_notes)) {
+    } else if ("sa_sample_id" %in% names(tbl_spl_notes)) {
       res <- res |>
         left_join(
           tbl_spl_notes,
