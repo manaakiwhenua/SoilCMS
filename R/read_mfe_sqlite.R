@@ -182,6 +182,112 @@
   return(res)
 }
 
+#' @title Get site location
+#' @importFrom dbplyr tbl_lazy
+#' @importFrom dplyr select left_join full_join join_by any_of colnames case_when
+#' @details
+#' When no locations are available in "sa_visit_data", we
+#' need to pull it from "sa_sample" (good example of that in
+#' the "ECAN AP carbon" dataset).
+#'
+#' @keywords internal
+#' @noRd
+.getCoords <- function(con) {
+
+  if (.isMonitoring(con)) {
+
+    # Pull site visit coords
+    df_coords_visit <- tbl(con, "sa_visit_data") |>
+      select(
+        # Site identification
+        site_id = sa_monitoringsite_id ,
+        site_identifier = site_identifier,
+        site_identifier_alt = site_identifier_alt,
+
+        # Spatial coordinates
+        location_x_site = location_x,
+        location_y_site = location_y,
+        location_srid_site = location_srid
+      )
+
+    # Pull sample coords
+    df_coords_spl <- tbl(con, "sa_sample") |>
+      select(
+        # Visit identification
+        sa_sitevisit_id,
+        # Site identification
+        subsite_id = any_of("sc_sub_site_identifier"),
+        # Sample identification
+        sa_sample_id,
+        sa_laboratorysample_id,
+        sample_identifier = identifier,
+        sample_identifier_alt = identifier_alt,
+
+        # Spatial coordinates
+        location_x_spl = any_of(location_geometry_x),
+        location_y_spl = any_of(location_geometry_y),
+        location_srid_spl = any_of(location_geometry_srid)
+      ) |>
+      left_join(
+        tbl(con, "sa_sitevisit")|>
+          select(
+            site_id = sa_monitoringsite_id,
+            sa_sitevisit_id
+          ),
+        by = join_by(sa_sitevisit_id)
+      )
+
+    # If there are sample level coordinates, we need to be able to pick
+    # between visit-level and site -level coords
+    if (all(c("location_x_spl", "location_y_spl") %in% colnames(df_coords_spl))) {
+
+      # Assemble vist-level and sample-level coords
+      res <- df_coords_visit |>
+        full_join(
+          df_coords_spl,
+          by = join_by(site_id)
+        ) |>
+        # We use sample level coords if they are available, because they usually correspond
+        # to specific replicates coordinates
+        mutate(
+          location_x = case_when(
+            !is.na(location_x_spl) ~ location_x_spl,
+            TRUE ~ location_x_site
+          ),
+          location_y = case_when(
+            !is.na(location_y_spl) ~ location_y_spl,
+            TRUE ~ location_y_site
+          ),
+          location_srid = case_when(
+            !is.na(location_srid_spl) ~ location_srid_spl,
+            TRUE ~ location_srid_site
+          )
+        )
+
+    } else {
+
+      # Else we just stick to visit-level coords
+      res <- df_coords_visit
+    }
+  } else {
+    # If this is not a monitored dataset, we don't support sample-level coords
+    res <- tbl(con, "sa_site") |>
+      select(
+        # Site identification
+        site_id = sa_site_id,
+        site_identifier = identifier,
+        site_identifier_alt = identifier_alt,
+
+        # Spatial coordinates
+        location_x = location_geometry_x,
+        location_y = location_geometry_y,
+        location_srid = location_geometry_srid
+      )
+  }
+
+  return(res)
+}
+
 #' @title Get site metadata
 #' @importFrom dbplyr tbl_lazy
 #' @importFrom dplyr select
