@@ -224,9 +224,9 @@
         sample_identifier_alt = identifier_alt,
 
         # Spatial coordinates
-        location_x_spl = any_of(location_geometry_x),
-        location_y_spl = any_of(location_geometry_y),
-        location_srid_spl = any_of(location_geometry_srid)
+        location_x_spl = any_of("location_geometry_x"),
+        location_y_spl = any_of("location_geometry_y"),
+        location_srid_spl = any_of("location_geometry_srid")
       ) |>
       left_join(
         tbl(con, "sa_sitevisit")|>
