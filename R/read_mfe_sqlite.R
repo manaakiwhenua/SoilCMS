@@ -139,6 +139,7 @@
     res <- tbl_soil |>
       select(
         site_id = sa_monitoringsite_id,
+        visit_date = date,
         nzsc = classifier_nzsc,
         nzsc_alt = classifier_nzsc_alt
       )
@@ -610,7 +611,7 @@
 
       # Add dataset information
       inner_join(
-        .getDatasetTbl(con),
+        .getDatasetTbl(con), # not depending on sampling date
         by = join_by(dataset_id)
       ) |>
 
