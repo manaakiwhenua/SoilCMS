@@ -101,7 +101,13 @@
   res <- res |>
     # Add a subsite_id column if it was not present in the table
     .add_cols("subsite_id") |>
-    # select(site_id, subsite_id) |>
+    # Make sure all empty strings are changed to NA
+    mutate(
+      subsite_id = case_when(
+        subsite_id == "" ~ NA,
+        TRUE ~ subsite_id
+      )
+    ) |>
     distinct()
 
   return(res)
@@ -863,8 +869,17 @@
       # Run request
       collect() |>
 
+      # Add subsite_id if not present
+      .add_cols("subsite_id") |>
+
       # Harmonise lab and field depths
       mutate(
+
+        # Convert empty strings to NA if present
+        subsite_id = case_when(
+          subsite_id == "" ~ NA,
+          TRUE ~ subsite_id
+        ),
 
         # Depth unit correction factor
         unit_factor = case_when(
@@ -931,8 +946,17 @@
       # Run request
       collect() |>
 
+      # Add subsite_id if not present
+      .add_cols("subsite_id") |>
+
       # Harmonise lab and field depths
       mutate(
+
+        # Convert empty strings to NA if present
+        subsite_id = case_when(
+          subsite_id == "" ~ NA,
+          TRUE ~ subsite_id
+        ),
 
         # Depth unit correction factor
         unit_factor = case_when(
