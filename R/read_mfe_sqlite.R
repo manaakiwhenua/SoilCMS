@@ -625,20 +625,38 @@
     ) |>
     select(-lc_landuse_id)
 
-  # Remove and concatenate
-  res <- res |>
-    group_by(sa_sitevisit_id, site_id) |>
-    summarise(
-      across(
-        everything(),
-        function(x) {
-          idx_valid <- which(x != "" & !is.na(x))
-          res <- paste0(x[idx_valid], collapse = ",")
-          return(res)
-        }
-      ),
-      .groups = "drop"
-    )
+  # Remove and concatenate additional observations
+  if (.isMonitoring(con)) {
+    res <- res |>
+      group_by(sa_sitevisit_id, site_id) |>
+      summarise(
+        across(
+          everything(),
+          function(x) {
+            idx_valid <- which(x != "" & !is.na(x))
+            res <- paste0(x[idx_valid], collapse = ",")
+            return(res)
+          }
+        ),
+        .groups = "drop"
+      )
+  } else {
+    res <- res |>
+      group_by(site_id) |>
+      summarise(
+        across(
+          everything(),
+          function(x) {
+            idx_valid <- which(x != "" & !is.na(x))
+            res <- paste0(x[idx_valid], collapse = ",")
+            return(res)
+          }
+        ),
+        .groups = "drop"
+      )
+  }
+
+
 
   return(res)
 }
@@ -787,7 +805,12 @@
   #     .after = site_id
   #   )
 
-  res <- site_df
+  # Catch for cases where columns are not available -- we then suppose the data isn't there
+  # and initiate these as NA
+  res <- .add_cols(
+    site_df,
+    "subsite_id"
+  )
 
   return(res)
 }
