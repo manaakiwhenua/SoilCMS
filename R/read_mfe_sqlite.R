@@ -78,9 +78,9 @@
         by = join_by(sa_sitevisit_id)
       ) |>
       # Remove sitevist_id
-      select(
-        -sa_sitevisit_id
-      ) |>
+      # select(
+      #   -sa_sitevisit_id
+      # ) |>
       distinct() |>
       # Run request
       collect()
@@ -92,6 +92,7 @@
         site_id = "sa_site_id",
         subsite_id = any_of("sc_sub_site_identifier")
       ) |>
+      distinct() |>
       # Run request
       collect()
   }
@@ -100,7 +101,7 @@
   res <- res |>
     # Add a subsite_id column if it was not present in the table
     .add_cols("subsite_id") |>
-    select(site_id, subsite_id) |>
+    # select(site_id, subsite_id) |>
     distinct()
 
   return(res)
@@ -138,6 +139,7 @@
 
     res <- tbl_soil |>
       select(
+        sa_sitevisit_id,
         site_id = sa_monitoringsite_id,
         visit_date = date,
         nzsc = classifier_nzsc,
@@ -346,17 +348,30 @@
 
   if (.isMonitoring(con)) {
 
+    # This is a table of site/subsite IDS
+    tbl_site_ids <- .getSubsites(con)
+
     # If it's a monitoring dataset, we need to get the site_id
     # from the sa_visit_data table
     res <- tbl(con, "sa_visit_data") |>
+      collect() |>
+      # Adding subsites
+      left_join(
+        tbl_site_ids,
+        join_by(sa_sitevisit_id)
+      ) |>
       select(
         # Dataset
         dataset_id = dm_monitoringdataset_id,
+
+        # Visit identification
+        sa_sitevisit_id,
 
         # Site identification
         site_id = sa_monitoringsite_id ,
         site_identifier = site_identifier,
         site_identifier_alt = site_identifier_alt,
+        subsite_id,
 
         # Spatial coordinates
         # location_x = location_x,
@@ -400,8 +415,18 @@
         # site_type = type,
         authority = authority#,
         # sampler
-      )
+      ) |>
+      collect()
   }
+
+  # Add spatial coordinates
+  tbl_coords <- .getCoords(con)
+
+  res <- res |>
+    left_join(
+      tbl_coords,
+      by = intersect(names(tbl_coords), names(res))
+    )
 
   return(res)
 }
@@ -418,7 +443,7 @@
   if (.isMonitoring(con)) {
     res <- tbl_ls |>
       select(
-        site_id = sa_sitevisit_id,
+        sa_sitevisit_id,
         slopeangle_val,
         slopeaspect_val
       )
@@ -499,6 +524,7 @@
 
     res <- tbl_lu |>
       select(
+        sa_sitevisit_id,
         site_id = sa_monitoringsite_id,
         lc_landuse_id
       )
@@ -581,8 +607,7 @@
 
   # Remove and concatenate
   res <- res |>
-    collect() |>
-    group_by(site_id) |>
+    group_by(sa_sitevisit_id, site_id) |>
     summarise(
       across(
         everything(),
@@ -606,6 +631,41 @@
 #' @keywords internal
 #' @noRd
 .getSiteTbl <- function(con) {
+
+  if (.isMonitoring(con)) {
+
+    site_df <- .getSiteMetaTbl(con) |>
+
+      # Add dataset information
+      inner_join(
+        .getDatasetTbl(con), # not depending on sampling date
+        by = join_by(dataset_id)
+      ) |>
+
+      # Add pedological information
+      left_join(
+        .getSoilTbl(con),
+        by = join_by(sa_sitevisit_id, site_id, visit_date)
+      ) |>
+
+      # Run request as we've had to also run the landuse data request
+      collect() |>
+
+      # Add landuse and management information
+      left_join(
+        .getLanduseTbl(con),
+        by = join_by(sa_sitevisit_id, site_id)
+      ) |>
+
+      # Add landscape position information
+      left_join(
+        collect(.getLandscapeTbl(con)),
+        by = join_by(sa_sitevisit_id)
+      ) |>
+      # Remove duplicate rows
+      distinct()
+
+  } else {
 
     site_df <- .getSiteMetaTbl(con) |>
 
@@ -637,65 +697,77 @@
       ) |>
       # Remove duplicate rows
       distinct()
+  }
 
-  # This averages site locations where more than one location is given
-  # (typically, where 2 pits have been dug)
-  site_df_avg <- lapply(
-    unique(site_df$site_id),
-    function(sid) {
-
-      # Select current site data
-      cur_df <- site_df |>
-        filter(
-          site_id == sid
-        )
-
-      # If there's more than one row of data, we need to average it before returning the site data
-      if (nrow(cur_df) > 1) {
-
-        nms <- names(cur_df)
-        l_cols <- lapply(
-          nms,
-          function(nm) {
-
-              # Average the location
-            if (nm %in% c("location_x", "location_y")) {
-              res <- mean(cur_df[[nm]], na.rm = TRUE)
-            } else if (nm == "visit_date") {
-              # Take the latest sampling date
-              dates <- unique(ymd(cur_df$visit_date))
-
-              if (length(dates) > 1) {
-                if (diff(dates) > 30) {
-                  print(
-                    paste0(cur_df$site_id, " : ", diff(dates))
-                  )
-                }
-              }
-
-              res <- as.character(max(dates))
-            } else {
-              # Any other attrbutes just take the unique value or collapse with a comma
-              res <- .unique(cur_df[[nm]])
-            }
-
-            return(res)
-          }
-        )
-        names(l_cols) <- nms
-        res <- bind_cols(l_cols)
-      } else {
-      # Otherwise we just return the site data as that one row
-        res <- cur_df
-      }
-
-    return(res)
-    }
-  ) |>
-    bind_rows()
+  # # This averages site locations where more than one location is given
+  # # (typically, where 2 pits have been dug)
+  # site_df_avg <- lapply(
+  #   unique(site_df$site_id),
+  #   function(sid) {
+  #
+  #     # Select current site data
+  #     cur_df <- site_df |>
+  #       filter(
+  #         site_id == sid
+  #       )
+  #
+  #     # If there's more than one row of data, we need to average it before returning the site data
+  #     if (nrow(cur_df) > 1) {
+  #
+  #       nms <- names(cur_df)
+  #       l_cols <- lapply(
+  #         nms,
+  #         function(nm) {
+  #
+  #             # Average the location
+  #           if (nm %in% c("location_x", "location_y")) {
+  #             res <- mean(cur_df[[nm]], na.rm = TRUE)
+  #           } else if (nm == "visit_date") {
+  #             # Take the latest sampling date
+  #             dates <- unique(ymd(cur_df$visit_date))
+  #
+  #             if (length(dates) > 1) {
+  #               if (diff(dates) > 30) {
+  #                 print(
+  #                   paste0(cur_df$site_id, " : ", diff(dates))
+  #                 )
+  #               }
+  #             }
+  #
+  #             res <- as.character(max(dates))
+  #           } else {
+  #             # Any other attrbutes just take the unique value or collapse with a comma
+  #             res <- .unique(cur_df[[nm]])
+  #           }
+  #
+  #           return(res)
+  #         }
+  #       )
+  #       names(l_cols) <- nms
+  #       res <- bind_cols(l_cols)
+  #     } else {
+  #     # Otherwise we just return the site data as that one row
+  #       res <- cur_df
+  #     }
+  #
+  #   return(res)
+  #   }
+  # ) |>
+  #   bind_rows()
 
   # ADD SUBSITE_ID
-  res <- site_df_avg |>
+  # res <- site_df_avg |>
+  #   left_join(
+  #     .getSubsites(con),
+  #     by = join_by(site_id),
+  #     relationship = "one-to-many"
+  #   ) |>
+  #   relocate(
+  #     subsite_id,
+  #     .after = site_id
+  #   )
+
+  res <- site_df |>
     left_join(
       .getSubsites(con),
       by = join_by(site_id),
@@ -1292,18 +1364,8 @@ cms_read <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
   # Get sample support tbl
   tbl_sa_spl <- .getSampleSupport(con)
 
-  # Get spatial coordinates
-  tbl_coords <- .getCoords(con)
-
   # Get site tbl
   tbl_site <- .getSiteTbl(con)
-
-  # Add spatial coords
-  tbl_site <- tbl_site |>
-    left_join(
-      tbl_coords,
-      by = intersect(names(tbl_coords), names(tbl_site))
-    )
 
   # Test whether we have all site IDs correctly there for both site and sample support
   test_site_ids <- all(unique(tbl_sa_spl$site_id) %in% tbl_site$site_id)
