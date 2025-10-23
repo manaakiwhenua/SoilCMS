@@ -1291,23 +1291,17 @@ cms_read <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
   # Get sample support tbl
   tbl_sa_spl <- .getSampleSupport(con)
 
+  # Get spatial coordinates
+  tbl_coords <- .getCoords(con)
+
   # Get site tbl
   tbl_site <- .getSiteTbl(con)
 
-
-  # Add coordinates to tbl_site
+  # Add spatial coords
   tbl_site <- tbl_site |>
     left_join(
-
-      # This returns a table of all site_id, subsite_id combinations
-      .getSampleSupport(con) |> select(site_id, subsite_id) |> distinct() |>
-        left_join(
-          # This is all the coords available for each site_id/subsite)id combination
-          .getCoords(con),
-          by = join_by(site_id, subsite_id)
-        ),
-
-      by = join_by(site_id, subsite_id, site_identifier, site_identifier_alt, visit_date)
+      tbl_coords,
+      by = intersect(names(tbl_coords), names(tbl_site))
     )
 
   # Test whether we have all site IDs correctly there for both site and sample support
