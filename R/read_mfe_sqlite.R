@@ -1123,7 +1123,12 @@
     distinct() |>
     pivot_wider(
       names_from = name,
-      values_from = result_val
+      values_from = result_val,
+      values_fn = function(x) {
+        warning("Duplicated soil physics value(s) for a specific `sa_laboratorysample_id`.", call. = FALSE)
+        res <- mean(x, na.rm = TRUE)
+        return(res)
+      }
     )
 
   return(res)
