@@ -196,6 +196,21 @@
 
   if (.isMonitoring(con)) {
 
+    tbl_sites <- tbl(con, "sa_sample") |>
+      select(
+        sa_sitevisit_id,
+        subsite_id = any_of("sc_sub_site_identifier")
+      ) |>
+      left_join(
+        tbl(con, "sa_sitevisit")|>
+          select(
+            site_id = sa_monitoringsite_id,
+            sa_sitevisit_id
+          ),
+        by = join_by(sa_sitevisit_id)
+      ) |>
+      distinct()
+
     # Pull site visit coords
     df_coords_visit <- tbl(con, "sa_visit_data") |>
       select(
@@ -285,15 +300,26 @@
 
       # Else we just stick to visit-level coords
       res <- df_coords_visit
+
     }
+
+    # Here we join the sites/subsites list with the visit_dates/coords
+    res <- tbl_sites |>
+      right_join(
+        res,
+        by = join_by(subsite_id, site_id)
+      )
+
   } else {
     # If this is not a monitored dataset, we don't support sample-level coords
+
     res <- tbl(con, "sa_site") |>
       select(
         # Site identification
         site_id = sa_site_id,
         site_identifier = identifier,
         site_identifier_alt = identifier_alt,
+        subsite_id = any_of("sc_sub_site_identifier"),
 
         # Spatial coordinates
         location_x = location_geometry_x,
@@ -1268,6 +1294,7 @@ cms_read <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
   # Get site tbl
   tbl_site <- .getSiteTbl(con)
 
+
   # Add coordinates to tbl_site
   tbl_site <- tbl_site |>
     left_join(
@@ -1275,12 +1302,12 @@ cms_read <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
       # This returns a table of all site_id, subsite_id combinations
       .getSampleSupport(con) |> select(site_id, subsite_id) |> distinct() |>
         left_join(
-          # This is all the coords availble for each site_id/subsite)id combination
+          # This is all the coords available for each site_id/subsite)id combination
           .getCoords(con),
           by = join_by(site_id, subsite_id)
         ),
 
-      by = join_by(site_id, subsite_id, site_identifier)
+      by = join_by(site_id, subsite_id, site_identifier, site_identifier_alt, visit_date)
     )
 
   # Test whether we have all site IDs correctly there for both site and sample support
