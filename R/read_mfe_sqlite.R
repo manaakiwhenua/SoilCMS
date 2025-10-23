@@ -158,6 +158,8 @@
       )
   }
 
+  res <- collect(res)
+
   return(res)
 }
 
@@ -181,6 +183,8 @@
         dataset_id = dm_surveydataset_id
       )
   }
+
+  res <- collect(res)
 
   return(res)
 }
@@ -446,6 +450,13 @@
         sa_sitevisit_id,
         slopeangle_val,
         slopeaspect_val
+      ) |>
+      distinct() |>
+      group_by(sa_sitevisit_id) |>
+      summarise(
+        slopeangle_val = mean(slopeangle_val, na.rm = TRUE),
+        slopeaspect_val = mean(slopeaspect_val, na.rm = TRUE),
+        .groups = "drop"
       )
   } else {
     res <- tbl_ls |>
@@ -453,8 +464,17 @@
         site_id = sa_site_id,
         slopeangle_val,
         slopeaspect_val
+      ) |>
+      distinct() |>
+      group_by(site_id) |>
+      summarise(
+        slopeangle_val = mean(slopeangle_val, na.rm = TRUE),
+        slopeaspect_val = mean(slopeaspect_val, na.rm = TRUE),
+        .groups = "drop"
       )
   }
+
+  res <- collect(res)
 
   return(res)
 }
@@ -659,7 +679,7 @@
 
       # Add landscape position information
       left_join(
-        collect(.getLandscapeTbl(con)),
+        .getLandscapeTbl(con),
         by = join_by(sa_sitevisit_id)
       ) |>
       # Remove duplicate rows
@@ -754,7 +774,7 @@
   #   }
   # ) |>
   #   bind_rows()
-
+  #
   # ADD SUBSITE_ID
   # res <- site_df_avg |>
   #   left_join(
@@ -767,16 +787,7 @@
   #     .after = site_id
   #   )
 
-  res <- site_df |>
-    left_join(
-      .getSubsites(con),
-      by = join_by(site_id),
-      relationship = "one-to-many"
-    ) |>
-    relocate(
-      subsite_id,
-      .after = site_id
-    )
+  res <- site_df
 
   return(res)
 }
