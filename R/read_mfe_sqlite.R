@@ -199,6 +199,9 @@
     # Pull site visit coords
     df_coords_visit <- tbl(con, "sa_visit_data") |>
       select(
+        # Visit identification
+        sa_sitevisit_id, visit_date,
+
         # Site identification
         site_id = sa_monitoringsite_id ,
         site_identifier = site_identifier,
@@ -212,6 +215,8 @@
 
     # Pull sample coords
     df_coords_spl <- tbl(con, "sa_sample") |>
+
+      # Selecting relevant columns
       select(
         # Visit identification
         sa_sitevisit_id,
@@ -229,7 +234,8 @@
         location_srid_spl = any_of("location_geometry_srid")
       ) |>
       left_join(
-        tbl(con, "sa_sitevisit")|>
+        # Here we join to collate the site_id
+        tbl(con, "sa_sitevisit") |>
           select(
             site_id = sa_monitoringsite_id,
             sa_sitevisit_id
@@ -245,7 +251,7 @@
       res <- df_coords_visit |>
         full_join(
           df_coords_spl,
-          by = join_by(site_id)
+          by = join_by(site_id, sa_sitevisit_id)
         ) |>
         # We use sample level coords if they are available, because they usually correspond
         # to specific replicates coordinates
@@ -296,7 +302,10 @@
       )
   }
 
-  res <- distinct(res)
+  # Remove any potential duplicate rows
+  res <- res |>
+    distinct() |>
+    collect()
 
   return(res)
 }
@@ -323,9 +332,9 @@
         site_identifier_alt = site_identifier_alt,
 
         # Spatial coordinates
-        location_x = location_x,
-        location_y = location_y,
-        location_srid = location_srid,
+        # location_x = location_x,
+        # location_y = location_y,
+        # location_srid = location_srid,
 
         # Altitude
         # altitude_val = location_altitude_val,
@@ -351,9 +360,9 @@
         site_identifier_alt = identifier_alt,
 
         # Spatial coordinates
-        location_x = location_geometry_x,
-        location_y = location_geometry_y,
-        location_srid = location_geometry_srid,
+        # location_x = location_geometry_x,
+        # location_y = location_geometry_y,
+        # location_srid = location_geometry_srid,
 
         # Altitude
         # altitude_val = location_altitude_val,
@@ -1253,11 +1262,26 @@ cms_read <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
   # Check all required tables are present in SQLite
   .checkRequiredTables(con)
 
+  # Get sample support tbl
+  tbl_sa_spl <- .getSampleSupport(con)
+
   # Get site tbl
   tbl_site <- .getSiteTbl(con)
 
-  # Get sample support tbl
-  tbl_sa_spl <- .getSampleSupport(con)
+  # Add coordinates to tbl_site
+  tbl_site <- tbl_site |>
+    left_join(
+
+      # This returns a table of all site_id, subsite_id combinations
+      .getSampleSupport(con) |> select(site_id, subsite_id) |> distinct() |>
+        left_join(
+          # This is all the coords availble for each site_id/subsite)id combination
+          .getCoords(con),
+          by = join_by(site_id, subsite_id)
+        ),
+
+      by = join_by(site_id, subsite_id, site_identifier)
+    )
 
   # Test whether we have all site IDs correctly there for both site and sample support
   test_site_ids <- all(unique(tbl_sa_spl$site_id) %in% tbl_site$site_id)
