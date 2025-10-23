@@ -268,7 +268,7 @@
           -any_of(
             c(
               "location_x_site", "location_y_site", "location_srid_site",
-              "sa_sitevisit_id", "subsite_id",
+              "sa_sitevisit_id",
               "sa_sample_id", "sa_laboratorysample_id", "sample_identifier", "sample_identifier_alt",
               "location_x_spl", "location_y_spl", "location_srid_spl"
             )
@@ -364,6 +364,7 @@
         # sampler
       )
   }
+
   return(res)
 }
 
