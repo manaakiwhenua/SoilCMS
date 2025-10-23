@@ -296,6 +296,8 @@
       )
   }
 
+  res <- distinct(res)
+
   return(res)
 }
 
@@ -1091,12 +1093,6 @@
   #   - we pull the chem depths
   #   - we pull the phys depths
   #   - we match phys depths to chem depths
-
-  ####################################
-  ####
-  #### NEED TO IMPLEMENT SUBSITES!!!
-  ####
-  ####################################
 
   # Pull all the unique site IDs of the dataset
   sids_df <- tbl_site |>
