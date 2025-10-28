@@ -408,6 +408,7 @@
 
         # Site identification
         site_id = sa_site_id,
+        sa_sitevisit_id = sa_site_id,
         site_identifier = identifier,
         site_identifier_alt = identifier_alt,
 
@@ -928,6 +929,7 @@
     res <- tbl(con, "sa_sample") |>
       # Subset specific columns
       select(
+        sa_sitevisit_id = "sa_site_id",
         site_id = "sa_site_id",
         subsite_id = any_of("sc_sub_site_identifier"),
         sa_sample_id,
@@ -1125,7 +1127,7 @@
       names_from = name,
       values_from = result_val,
       values_fn = function(x) {
-        warning("Duplicated soil physics value(s) for a specific `sa_laboratorysample_id`.", call. = FALSE)
+        warning("Averaging duplicated soil physics value(s) for a specific `sa_laboratorysample_id`.", call. = FALSE)
         res <- mean(x, na.rm = TRUE)
         return(res)
       }
@@ -1143,6 +1145,7 @@
   res <- tbl_sa_spl |>
 
     select(
+      sa_sitevisit_id,
       site_id, subsite_id,
       depth_minval, depth_maxval,
       type, type_method, type_composite,
@@ -1175,7 +1178,7 @@
     # Aggregate at the site/subsite level
     # - remove sample IDs
     select(
-      -contains("sample"),
+      # -contains("sample"),
       # These are now handled in the dedicated .getSplMetaTbl function
       -type, -type_method, -type_composite,
       - n_composite, -area_composite_samples_represent
@@ -1184,7 +1187,7 @@
     group_by(
       across(
         any_of(
-          c("site_id", "subsite_id", "depth_minval", "depth_maxval")
+          c("sa_sitevisit_id", "site_id", "subsite_id", "depth_minval", "depth_maxval")
         )
       )
     ) |>
@@ -1219,7 +1222,7 @@
     # - remove sample IDs
     select(
       # -contains("sample")
-      -sa_sitevisit_id,
+      # -sa_sitevisit_id,
       -sa_sample_id, -sa_laboratorysample_id,
       -sample_identifier, -sample_identifier_alt,
       -unit_factor, -depth_uom,
@@ -1232,7 +1235,7 @@
     group_by(
       across(
         any_of(
-          c("site_id", "subsite_id", "depth_minval", "depth_maxval")
+          c("sa_sitevisit_id", "site_id", "subsite_id", "depth_minval", "depth_maxval")
         )
       )
     ) |>
@@ -1267,22 +1270,23 @@
 
   # Pull all the unique site IDs of the dataset
   sids_df <- tbl_site |>
-    select(site_id, subsite_id) |>
+    select(sa_sitevisit_id, site_id, subsite_id) |>
     distinct()
 
   l_res <- pbapply::pblapply(
       1:nrow(sids_df),
       function(i) {
 
+        visitid <- sids_df$sa_sitevisit_id[i]
         sid <- sids_df$site_id[i]
         subid <- sids_df$subsite_id[i]
 
         if (is.na(subid)) {
-          chem <- tbl_chem |> filter(site_id == sid & is.na(subsite_id))
-          phys <- tbl_phys |> filter(site_id == sid & is.na(subsite_id))
+          chem <- tbl_chem |> filter(sa_sitevisit_id == visitid & site_id == sid & is.na(subsite_id))
+          phys <- tbl_phys |> filter(sa_sitevisit_id == visitid & site_id == sid & is.na(subsite_id))
         } else {
-          chem <- tbl_chem |> filter(site_id == sid & subsite_id == subid)
-          phys <- tbl_phys |> filter(site_id == sid & subsite_id == subid)
+          chem <- tbl_chem |> filter(sa_sitevisit_id == visitid & site_id == sid & subsite_id == subid)
+          phys <- tbl_phys |> filter(sa_sitevisit_id == visitid & site_id == sid & subsite_id == subid)
         }
 
         # Removing zero-thicness horizons
@@ -1311,7 +1315,6 @@
         if (nrow(phys) == 0 | nrow(chem) == 0) {
           return(NULL)
         }
-
 
         # Convert soil physics data.frame to a SoilProfileCollection
         phys_sdf <- phys
@@ -1475,11 +1478,13 @@ cms_read <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
   res <- tbl_site |>
     right_join(
       agg_chem_phys,
-      by = join_by(site_id, subsite_id)
+      # by = join_by(site_id, subsite_id)
+      by = join_by(sa_sitevisit_id, site_id, subsite_id)
     ) |>
     left_join(
       tbl_md,
-      join_by(site_id, subsite_id, depth_minval, depth_maxval)
+      # by = join_by(site_id, subsite_id, depth_minval, depth_maxval)
+      by = join_by(sa_sitevisit_id, site_id, subsite_id, depth_minval, depth_maxval)
     )
 
   return(res)
