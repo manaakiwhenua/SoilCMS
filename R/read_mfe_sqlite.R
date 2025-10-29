@@ -197,7 +197,7 @@
 
 #' @title Get site location
 #' @importFrom dbplyr tbl_lazy
-#' @importFrom dplyr select left_join full_join join_by any_of colnames case_when
+#' @importFrom dplyr select left_join full_join join_by any_of case_when rename
 #' @details
 #' When no locations are available in "sa_visit_data", we
 #' need to pull it from "sa_sample" (good example of that in
@@ -269,11 +269,15 @@
             sa_sitevisit_id
           ),
         by = join_by(sa_sitevisit_id)
+      ) |>
+      # Only keep records that have actual locations
+      filter(
+        !is.na(location_x_spl) & !is.na(location_y_spl)
       )
 
     # If there are sample level coordinates, we need to be able to pick
     # between visit-level and site -level coords
-    if (all(c("location_x_spl", "location_y_spl") %in% colnames(df_coords_spl))) {
+    if (nrow(collect(df_coords_spl)) > 0) {
 
       # Assemble vist-level and sample-level coords
       res <- df_coords_visit |>
@@ -312,7 +316,24 @@
     } else {
 
       # Else we just stick to visit-level coords
-      res <- df_coords_visit
+      # BUT we need to add the subsites...
+      res <- tbl(con, "sa_sample") |>
+        select(
+          # Visit identification
+          sa_sitevisit_id,
+          # Site identification
+          subsite_id = any_of("sc_sub_site_identifier")
+        ) |>
+        distinct() |>
+        left_join(
+          df_coords_visit,
+          by = join_by(sa_sitevisit_id)
+        ) |>
+        rename(
+          location_x = location_x_site,
+          location_y = location_y_site,
+          location_srid = location_srid_site
+        )
 
     }
 
@@ -320,7 +341,7 @@
     res <- tbl_sites |>
       right_join(
         res,
-        by = join_by(subsite_id, site_id)
+        by = join_by(sa_sitevisit_id, subsite_id, site_id)
       )
 
   } else {
@@ -343,6 +364,13 @@
 
   # Remove any potential duplicate rows
   res <- res |>
+    # Make sure empty strings are changed to NAs
+    mutate(
+      subsite_id = case_when(
+        subsite_id == "" ~ NA,
+        TRUE ~ subsite_id
+      )
+    ) |>
     distinct() |>
     collect()
 
