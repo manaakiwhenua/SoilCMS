@@ -359,20 +359,22 @@
         location_x = location_geometry_x,
         location_y = location_geometry_y,
         location_srid = location_geometry_srid
-      )
+      ) |>
+      collect() |>
+      .add_cols("subsite_id")
   }
 
   # Remove any potential duplicate rows
   res <- res |>
+    distinct() |>
+    collect() |>
     # Make sure empty strings are changed to NAs
     mutate(
       subsite_id = case_when(
         subsite_id == "" ~ NA,
         TRUE ~ subsite_id
       )
-    ) |>
-    distinct() |>
-    collect()
+    )
 
   return(res)
 }
