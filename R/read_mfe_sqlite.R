@@ -1412,12 +1412,15 @@
           }
 
           # dice formula
-          if (float_depths) {
-            depths_dice <- deparse(dput(seq(min_depth, max_depth, by = 10)), width.cutoff = 500)
-            dice_form  <- as.formula(paste0(depths_dice, " ~ ."))
-          } else {
-            dice_form <- as.formula(paste0(min_depth, ":", max_depth, " ~ ."))
-          }
+          # if (float_depths) {
+          #   browser()
+          #   # depths_dice <- deparse(dput(seq(min_depth, max_depth, by = 10)), width.cutoff = 500)
+          #   depths_dice <- paste0(min_depth, ":", max_depth)
+          #   dice_form  <- as.formula(paste0(depths_dice, " ~ ."))
+          # } else {
+          #   dice_form <- as.formula(paste0(min_depth, ":", max_depth, " ~ ."))
+          # }
+          dice_form <- as.formula(paste0(min_depth, ":", max_depth, " ~ ."))
 
           phys_dc <- dice(
             phys_sdf,
@@ -1425,6 +1428,22 @@
             SPC = FALSE
           ) |>
             select(names(phys))
+
+          # Making sure site IDs are replicated even where no matching data was found by the dice function
+          idx_na_ids <- phys_dc |>
+            select(
+              sa_sitevisit_id, site_id, subsite_id
+            ) |>
+            apply(
+              1, function(x) all(is.na(x))
+            ) |>
+            which()
+
+          if (length(idx_na_ids) > 0) {
+            phys_dc$sa_sitevisit_id[idx_na_ids] <- phys_dc$sa_sitevisit_id[-idx_na_ids][1]
+            phys_dc$site_id[idx_na_ids] <- phys_dc$site_id[-idx_na_ids][1]
+            phys_dc$subsite_id[idx_na_ids] <- phys_dc$subsite_id[-idx_na_ids][1]
+          }
 
           # For each sample in the soil chemistry profile
           res <- plyr::adply(
