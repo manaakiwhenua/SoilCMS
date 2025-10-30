@@ -1209,6 +1209,9 @@
     # - remove sample IDs
     select(
       # -contains("sample"),
+
+      # Handled in .getPhys
+      -amt_core_diameter_cm_val,
       # These are now handled in the dedicated .getSplMetaTbl function
       -type, -type_method, -type_composite,
       - n_composite, -area_composite_samples_represent
@@ -1231,6 +1234,14 @@
 
       .groups = "drop"
     )
+
+  # Remove rows with no data
+  idx_na <- res |>
+    select(starts_with("amt_")) |>
+    apply(1, function(x) all(is.na(x))) |>
+    which()
+
+  res <- res[-idx_na,]
 
   return(res)
 }
@@ -1280,6 +1291,14 @@
 
       .groups = "drop"
     )
+
+  # Remove rows with no data
+  idx_na <- res |>
+    select(starts_with("amt_")) |>
+    apply(1, function(x) all(is.na(x))) |>
+    which()
+
+  res <- res[-idx_na,]
 
   return(res)
 }
@@ -1346,57 +1365,111 @@
           return(NULL)
         }
 
-        # Convert soil physics data.frame to a SoilProfileCollection
-        phys_sdf <- phys
-        depths(phys_sdf) <- site_id ~ depth_minval + depth_maxval
-
-        # Create diced soil profile
-        #
-
-        # A requirement of aqp::dice is that depths must be >= 0
-        min_depth <- max(0, min(chem$depth_minval))
-        max_depth <- max(0, max(chem$depth_maxval))
-
-        phys_dc <- dice(
-          phys_sdf,
-          fm = as.formula(paste0(min_depth, ":", max_depth, " ~ .")),
-          SPC = FALSE
-        ) |>
-          select(names(phys))
-
-        # For each sample in the soil chemistry profile
-        res <- plyr::adply(
-          chem,
-          1,
-          function(dc) {
-            min_depth <- dc$depth_minval
-            max_depth <- dc$depth_maxval
-
-            rres <- phys_dc |>
-              filter(
-                depth_minval >= min_depth & depth_maxval <= max_depth
-              ) |>
-              select(
-                -site_id, -subsite_id,
-                -depth_minval, -depth_maxval
-              ) |>
-              summarise(
-                # across(
-                #   starts_with("amt_"),
-                #     .weighted_mean_count
-                # ),
-
-                # Quantitative variables
-                across(where(is.numeric), ~ .weighted_mean_count(.x)),
-                # Character variables
-                across(where(is.character), ~ .mode(.x)),
-
-                .groups = "drop"
-              )
-
-            return(rres)
-          }
+        # FIRST: Are the depth supports for chem and phys identical?
+        identical_supports <- identical(
+          chem |> select(depth_minval, depth_maxval) |> arrange(depth_minval, depth_maxval),
+          phys |> select(depth_minval, depth_maxval) |> arrange(depth_minval, depth_maxval)
         )
+
+        if (identical_supports) {
+
+          # We can just use a join
+          res <- chem |>
+            left_join(
+              phys,
+              by = join_by(sa_sitevisit_id, site_id, subsite_id, depth_minval, depth_maxval)
+            )
+
+        } else {
+          # If the have different depth supports, we have to create diced soil profile
+          #
+
+          # A AQP requirement is that depths have to be integer!
+          float_depths <- any(phys$depth_minval != as.integer(phys$depth_minval))
+
+          if (float_depths) {
+            chem$depth_minval <- as.integer(10 * chem$depth_minval)
+            chem$depth_maxval <- as.integer(10 * chem$depth_maxval)
+
+            phys$depth_minval <- as.integer(10 * phys$depth_minval)
+            phys$depth_maxval <- as.integer(10 * phys$depth_maxval)
+          }
+
+          # Create composite ID from sa_sitevisit_id and subsite_id
+          phys$aqpid <- paste0(phys$sa_sitevisit_id, "___", phys$subsite_id)
+
+          # Convert soil physics data.frame to a SoilProfileCollection
+          phys_sdf <- phys
+          depths(phys_sdf) <- aqpid ~ depth_minval + depth_maxval
+
+          # A requirement of aqp::dice is that depths must be >= 0
+          min_depth <- max(0, min(chem$depth_minval))
+          max_depth <- max(0, max(chem$depth_maxval))
+
+          if (float_depths) {
+            min_depth <- as.integer(10 * min_depth)
+            max_depth <- as.integer(10 * max_depth)
+          }
+
+          # dice formula
+          if (float_depths) {
+            depths_dice <- deparse(dput(seq(min_depth, max_depth, by = 10)), width.cutoff = 500)
+            dice_form  <- as.formula(paste0(depths_dice, " ~ ."))
+          } else {
+            dice_form <- as.formula(paste0(min_depth, ":", max_depth, " ~ ."))
+          }
+
+          phys_dc <- dice(
+            phys_sdf,
+            fm = dice_form,
+            SPC = FALSE
+          ) |>
+            select(names(phys))
+
+          # For each sample in the soil chemistry profile
+          res <- plyr::adply(
+            chem,
+            1,
+            function(dc) {
+              cur_min_depth <- dc$depth_minval
+              cur_max_depth <- dc$depth_maxval
+
+              rres <- phys_dc |>
+                filter(
+                  depth_minval >= cur_min_depth & depth_maxval <= cur_max_depth
+                ) |>
+                select(
+                #   -site_id, -subsite_id,
+                  -depth_minval, -depth_maxval
+                ) |>
+                summarise(
+                  # across(
+                  #   starts_with("amt_"),
+                  #     .weighted_mean_count
+                  # ),
+
+                  # Quantitative variables
+                  across(where(is.numeric), ~ .weighted_mean_count(.x)),
+                  # Character variables
+                  across(where(is.character), ~ .mode(.x)),
+                  # Logical variables
+                  across(where(is.logical), ~ .mode(.x)),
+
+                  .groups = "drop"
+                )
+
+              return(rres)
+            }
+          )
+
+          # If we had floating depths, we have to divide by them to
+          # go back to the correct depths
+          if (float_depths) {
+            res$depth_minval <- res$depth_minval / 10
+            res$depth_maxval <- res$depth_maxval / 10
+          }
+
+        }
 
         return(res)
       }
