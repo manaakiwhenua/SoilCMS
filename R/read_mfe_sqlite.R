@@ -222,6 +222,12 @@
           ),
         by = join_by(sa_sitevisit_id)
       ) |>
+      mutate(
+        subsite_id = case_when(
+          subsite_id == "" ~ NA,
+          TRUE ~ subsite_id
+        )
+      ) |>
       distinct()
 
     # Pull site visit coords
@@ -239,6 +245,13 @@
         location_x_site = location_x,
         location_y_site = location_y,
         location_srid_site = location_srid
+      ) |>
+      left_join(
+        tbl_sites,
+        by = join_by(
+          sa_sitevisit_id,
+          site_id
+        )
       )
 
     # Pull sample coords
@@ -283,7 +296,7 @@
       res <- df_coords_visit |>
         full_join(
           df_coords_spl,
-          by = join_by(site_id, sa_sitevisit_id)
+          by = join_by(sa_sitevisit_id, site_id, subsite_id)
         ) |>
         # We use sample level coords if they are available, because they usually correspond
         # to specific replicates coordinates
@@ -317,18 +330,24 @@
 
       # Else we just stick to visit-level coords
       # BUT we need to add the subsites...
-      res <- tbl(con, "sa_sample") |>
-        select(
-          # Visit identification
-          sa_sitevisit_id,
-          # Site identification
-          subsite_id = any_of("sc_sub_site_identifier")
-        ) |>
-        distinct() |>
-        left_join(
-          df_coords_visit,
-          by = join_by(sa_sitevisit_id)
-        ) |>
+      # res <- tbl(con, "sa_sample") |>
+      #   select(
+      #     # Visit identification
+      #     sa_sitevisit_id,
+      #     # Site identification
+      #     subsite_id = any_of("sc_sub_site_identifier")
+      #   ) |>
+      #   distinct() |>
+      #   left_join(
+      #     df_coords_visit,
+      #     by = join_by(sa_sitevisit_id, subsite_id)
+      #   ) |>
+      #   rename(
+      #     location_x = location_x_site,
+      #     location_y = location_y_site,
+      #     location_srid = location_srid_site
+      #   )
+      res <- df_coords_visit |>
         rename(
           location_x = location_x_site,
           location_y = location_y_site,
@@ -338,11 +357,11 @@
     }
 
     # Here we join the sites/subsites list with the visit_dates/coords
-    res <- tbl_sites |>
-      right_join(
-        res,
-        by = join_by(sa_sitevisit_id, subsite_id, site_id)
-      )
+    # res <- tbl_sites |>
+    #   right_join(
+    #     res,
+    #     by = join_by(sa_sitevisit_id, subsite_id, site_id)
+    #   )
 
   } else {
     # If this is not a monitored dataset, we don't support sample-level coords
@@ -773,6 +792,13 @@
       # Remove duplicate rows
       distinct()
   }
+
+  # Here we try to gap fill locations that may be missing for some subsites, but may
+  # be available for other subsites of the same site_id
+  if (any(is.na(location_x))) {
+
+  }
+
 
   # # This averages site locations where more than one location is given
   # # (typically, where 2 pits have been dug)
@@ -1293,12 +1319,12 @@
     )
 
   # Remove rows with no data
-  idx_na <- res |>
-    select(starts_with("amt_")) |>
-    apply(1, function(x) all(is.na(x))) |>
-    which()
-
-  res <- res[-idx_na,]
+  # idx_na <- res |>
+  #   select(starts_with("amt_")) |>
+  #   apply(1, function(x) all(is.na(x))) |>
+  #   which()
+  #
+  # res <- res[-idx_na,]
 
   return(res)
 }
