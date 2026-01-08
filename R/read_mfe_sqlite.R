@@ -581,6 +581,7 @@
 }
 
 #' @title Get landuse data
+#' @include utils.R
 #' @importFrom dbplyr tbl_lazy
 #' @importFrom dplyr select left_join everything across
 #' @keywords internal

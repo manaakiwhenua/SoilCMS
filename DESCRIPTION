@@ -25,8 +25,8 @@ Collate:
     'globals.R'
     'write_mfe_xlsx.R'
     'process_mfe_data.R'
+    'utils.R'
     'read_mfe_sqlite.R'
     'orchestrate_export.R'
-    'utils.R'
 Depends: 
     R (>= 2.10)
