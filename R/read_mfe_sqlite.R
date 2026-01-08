@@ -537,7 +537,7 @@
 
 #' @title Get sample notes data
 #' @importFrom dbplyr tbl_lazy
-#' @importFrom dplyr select
+#' @importFrom dplyr select group_by summarise
 #' @keywords internal
 #' @noRd
 .getSplNotesTbl <- function(con) {
@@ -545,17 +545,35 @@
   res <- tbl(con, "sa_sample_note")
 
   if ("sa_laboratorysample_id" %in% colnames(res)) {
+
     res <- res |>
       select(
         sa_laboratorysample_id,
         sample_note = note
       )
+
+    # Make sure there is only one note per row by concatenating the potential dfferent notes
+    res <- res |>
+      group_by(sa_laboratorysample_id) |>
+      summarise(
+        sample_note = paste0(sample_note, collapse = "; ")
+      )
+
   } else if ("sa_sample_id" %in% colnames(res)) {
+
     res <- res |>
       select(
         sa_sample_id,
         sample_note = note
       )
+
+    # Make sure there is only one note per row by concatenating the potential dfferent notes
+    res <- res |>
+      group_by(sa_laboratorysample_id) |>
+      summarise(
+        sample_note = paste0(sample_note, collapse = "; ")
+      )
+
   } else {
     stop(
       cat("No sample ID columns found in table `sa_sample_note` for file:\n ", con@dbname),
