@@ -695,7 +695,7 @@
           everything(),
           function(x) {
             idx_valid <- which(x != "" & !is.na(x))
-            res <- paste0(x[idx_valid], collapse = ",")
+            res <- paste0(unique(x[idx_valid]), collapse = ",")
             return(res)
           }
         ),
