@@ -538,11 +538,13 @@
 #' @title Get sample notes data
 #' @importFrom dbplyr tbl_lazy
 #' @importFrom dplyr select group_by summarise
+#' @importFrom stringr str_flatten
 #' @keywords internal
 #' @noRd
 .getSplNotesTbl <- function(con) {
 
-  res <- tbl(con, "sa_sample_note")
+  res <- tbl(con, "sa_sample_note") |>
+    collect()
 
   if ("sa_laboratorysample_id" %in% colnames(res)) {
 
@@ -556,7 +558,7 @@
     res <- res |>
       group_by(sa_laboratorysample_id) |>
       summarise(
-        sample_note = paste0(sample_note, collapse = "; ")
+        sample_note = str_flatten(sample_note, collapse = "; ")
       )
 
   } else if ("sa_sample_id" %in% colnames(res)) {
@@ -569,9 +571,9 @@
 
     # Make sure there is only one note per row by concatenating the potential dfferent notes
     res <- res |>
-      group_by(sa_laboratorysample_id) |>
+      group_by(sa_sample_id) |>
       summarise(
-        sample_note = paste0(sample_note, collapse = "; ")
+        sample_note = str_flatten(sample_note, collapse = "; ")
       )
 
   } else {
@@ -1086,8 +1088,7 @@
   }
 
   # Add sample notes, if any
-  tbl_spl_notes <- .getSplNotesTbl(con) |>
-    collect()
+  tbl_spl_notes <- .getSplNotesTbl(con)
 
   if (nrow(tbl_spl_notes) > 0) {
     if ("sa_laboratorysample_id" %in% names(tbl_spl_notes)) {
