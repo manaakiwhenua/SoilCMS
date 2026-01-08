@@ -674,6 +674,10 @@
   tbl_lu_notes <- .getLanduseNotesTbl(con) |>
     collect()
 
+  # Fix the duration fields using the dedicated function
+  res$landuse_duration <- .fixDuration(res$landuse_duration)
+  res$irrigation_duration <- .fixDuration(res$irrigation_duration)
+
   res <- res |>
     left_join(
       tbl_lu_notes,
@@ -1094,8 +1098,8 @@
     c(
       "subsite_id",
       "type_composite", "type_method",
-      "amt_core_diameter_cm_val", "n_composite", "area_composite_samples_represent",
-      "amt_field_moist_water_content_p"
+      "amt_core_diameter_cm_val", "n_composite", "area_composite_samples_represent"#,
+      # "amt_field_moist_water_content_p"
     )
   )
 
