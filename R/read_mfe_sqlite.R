@@ -28,7 +28,7 @@
   # Required tables
   req_tbls <- c(
     # Views
-    "MfE_carbon_sample",
+    # "MfE_carbon_sample", #I don't think it's needed anymore
 
     # Tables
     "sa_sample",
