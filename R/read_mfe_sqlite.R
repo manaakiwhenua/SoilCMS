@@ -1354,7 +1354,7 @@
 }
 
 #' @title Aggregate soil physics data on the soil chem depth intervals
-#' @importFrom dplyr filter summarise across where bind_rows
+#' @importFrom dplyr filter summarise across where bind_rows arrange
 #' @importFrom tidyr pivot_wider
 #' @importFrom pbapply pblapply
 #' @importFrom stats as.formula na.omit weighted.mean
