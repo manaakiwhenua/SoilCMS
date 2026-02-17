@@ -22,6 +22,15 @@ authority <-
   location_srid <-
   location_x <-
   location_y <-
+  location_x_spl <-
+  location_y_spl  <-
+  location_x_site <-
+  location_y_site <-
+  location_srid_site <-
+  location_altitude_val <-
+  altitude_val <-
+  altitude_uom <-
+  location_altitude_uom <-
   n_composite <-
   name <-
   note <-
@@ -42,12 +51,14 @@ authority <-
   slopeangle_val <-
   slopeaspect_val <-
   subsite_id <-
+  sample_note <-
   type <-
   type_composite <-
   type_method <-
   unit_factor <-
   visit_authority <-
   visit_date <-
+  amt_core_diameter_cm_val <-
   amt_airdry_water_content_p <-
   amt_coarse_airdry_g <-
   amt_field_moist_water_content_p <-
