@@ -438,8 +438,8 @@
         # location_srid = location_srid,
 
         # Altitude
-        # altitude_val = location_altitude_val,
-        # altitude_uom = location_altitude_uom,
+        altitude_val = altitude_val,
+        altitude_uom = altitude_uom,
 
         # Other metadata
         visit_date = visit_date,
@@ -467,8 +467,8 @@
         # location_srid = location_geometry_srid,
 
         # Altitude
-        # altitude_val = location_altitude_val,
-        # altitude_uom = location_altitude_uom,
+        altitude_val = location_altitude_val,
+        altitude_uom = location_altitude_uom,
 
         # Other metadata
         visit_date = date,
