@@ -1141,7 +1141,7 @@
     mutate(
       name = case_when(
         propertytypeid %in% c(2663, 1814) & result_uom == "%" ~ "amt_orgc_p",
-        propertytypeid %in% c(2663, 1814) & result_uom == "Mg/ha" ~ "amt_calc_orgc_mgha",
+        propertytypeid == 2793 & result_uom == "Mg/ha" ~ "amt_calc_orgc_mgha",
         propertytypeid == 1832 & result_uom == "%" ~ "amt_tn_p",
         TRUE ~ NULL
       )
