@@ -138,11 +138,17 @@
   res <- tbl_hz |>
     collect() |>
     select(
-      sd_soil_id,
-      sd_horizon_id,
+      soil_id = sd_soil_id,
+      # horizon_id = sd_horizon_id,
       designation,
       depth_minval = horizondepth_minval,
       depth_maxval = horizondepth_maxval
+    ) |>
+    left_join(
+      .getSoilTbl(con)
+    ) |>
+    select(
+      site_id, designation, depth_minval, depth_maxval
     )
 
   return(res)
@@ -169,6 +175,7 @@
       select(
         sa_sitevisit_id,
         site_id = sa_monitoringsite_id,
+        soil_id = sd_soil_id,
         visit_date = date,
         nzsc = classifier_nzsc,
         nzsc_alt = classifier_nzsc_alt
@@ -181,6 +188,7 @@
     res <- tbl_soil |>
       select(
         site_id = sa_site_id,
+        soil_id = sd_soil_id,
         nzsc = classifier_nzsc,
         nzsc_alt = classifier_nzsc_alt
       )
@@ -1485,14 +1493,6 @@
           }
 
           # dice formula
-          # if (float_depths) {
-          #   browser()
-          #   # depths_dice <- deparse(dput(seq(min_depth, max_depth, by = 10)), width.cutoff = 500)
-          #   depths_dice <- paste0(min_depth, ":", max_depth)
-          #   dice_form  <- as.formula(paste0(depths_dice, " ~ ."))
-          # } else {
-          #   dice_form <- as.formula(paste0(min_depth, ":", max_depth, " ~ ."))
-          # }
           dice_form <- as.formula(paste0(min_depth, ":", max_depth, " ~ ."))
 
           phys_dc <- dice(
