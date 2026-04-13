@@ -126,6 +126,28 @@
   return(res)
 }
 
+#' @title Get horizon designation data
+#' @importFrom dbplyr tbl_lazy
+#' @importFrom dplyr select
+#' @keywords internal
+#' @noRd
+.getHorizonTbl <- function(con) {
+
+  tbl_hz <- tbl(con, "sd_horizon")
+
+  res <- tbl_hz |>
+    collect() |>
+    select(
+      sd_soil_id,
+      sd_horizon_id,
+      designation,
+      depth_minval = horizondepth_minval,
+      depth_maxval = horizondepth_maxval
+    )
+
+  return(res)
+}
+
 #' @title Get soil data
 #' @importFrom dbplyr tbl_lazy
 #' @importFrom dplyr select left_join join_by
@@ -1143,6 +1165,7 @@
         propertytypeid %in% c(2663, 1814) & result_uom == "%" ~ "amt_orgc_p",
         propertytypeid == 2793 & result_uom == "Mg/ha" ~ "amt_calc_orgc_mgha",
         propertytypeid == 1832 & result_uom == "%" ~ "amt_tn_p",
+        propertytypeid == 1808 ~ "Al_acid_oxalate_pct",
         TRUE ~ NULL
       )
     ) |>
@@ -1503,7 +1526,7 @@
               cur_min_depth <- dc$depth_minval
               cur_max_depth <- dc$depth_maxval
 
-              rres <- phys_dc |>
+              cur_res <- phys_dc |>
                 filter(
                   depth_minval >= cur_min_depth & depth_maxval <= cur_max_depth
                 ) |>
@@ -1527,7 +1550,7 @@
                   .groups = "drop"
                 )
 
-              return(rres)
+              return(cur_res)
             }
           )
 
