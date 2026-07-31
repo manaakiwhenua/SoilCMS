@@ -1173,7 +1173,7 @@
         propertytypeid %in% c(2663, 1814) & result_uom == "%" ~ "amt_orgc_p",
         propertytypeid == 2793 & result_uom == "Mg/ha" ~ "amt_calc_orgc_mgha",
         propertytypeid == 1832 & result_uom == "%" ~ "amt_tn_p",
-        propertytypeid == 1808 ~ "Al_acid_oxalate_pct",
+        propertytypeid == 1808 ~ "amt_al_acid_oxalate_pct",
         TRUE ~ NULL
       )
     ) |>
@@ -1693,7 +1693,7 @@ cms_read <- function(fn, view = "MfE_Carbon_data", legacy = FALSE) {
 # fn1 = "/Users/pierreroudier/OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nscm_20250820.db"
 # fn2 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_sustain_20250825.db"
 # fn3 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_MfE Soil CMS_20250814.db"
-fn4 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nsd_20240523.db"
+fn4 = "/Users/pierreroudier//OneDrive - MWLR/MFE_CARBON/soilcms-data/data/NSDR_Export_nsd_20260731.db"
 
 # con1  = dbConnect(RSQLite::SQLite(), fn1)
 # con2  = dbConnect(RSQLite::SQLite(), fn2)
