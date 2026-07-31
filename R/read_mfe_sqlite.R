@@ -1222,7 +1222,7 @@
         propertytypeid == 1980 & result_uom %in% c('g/mL', 't/m3') ~ "amt_bulkdensity_of_2mm_per_tot_sample_volume_gcm3",
         propertytypeid == 2779 ~ "amt_calc_coarse_fraction_pp",
         propertytypeid == 1988 & result_uom == "%" ~ "amt_field_moist_water_content_p",
-        propertytypeid == 1985 & str_detect(result_uom, fixed("%")) ~ "amt_stones_over_2mm",
+        propertytypeid == 1985 & str_detect(result_uom, fixed("%")) ~ "amt_stones_over_2mm_vol_p",
 
         TRUE ~ NA
       )
